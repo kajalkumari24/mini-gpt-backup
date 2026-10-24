@@ -41,11 +41,14 @@ def build_chat_prompt(messages, max_chars=2000):
 
 
 def extract_reply(generated):
-    """Keep only the first speech: stop at a blank line or at the next speaker label."""
+    """Keep only the first speech: stop at [EOS], a blank line, or the next speaker label."""
+    if "[EOS]" in generated:
+        generated = generated.split("[EOS]")[0]
     speech = generated.split("\n\n")[0]
     kept = []
     for line in speech.split("\n"):
         if _LABEL_LINE.fullmatch(line.strip()):
             break
         kept.append(line)
-    return "\n".join(kept).strip()
+    reply = "\n".join(kept).strip()
+    return re.sub(r"\[EOS\]", "", reply).strip()

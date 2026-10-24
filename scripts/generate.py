@@ -20,7 +20,10 @@ from training.checkpoint import load_model_from_checkpoint
 
 def main():
     parser = argparse.ArgumentParser(description="Generate text with the Mini GPT.")
-    parser.add_argument("--checkpoint", default=str(ROOT / "checkpoints" / "best.pt"))
+    default_ckpt = ROOT / "checkpoints" / "v3" / "best.pt"
+    if not default_ckpt.is_file():
+        default_ckpt = ROOT / "checkpoints" / "best.pt"
+    parser.add_argument("--checkpoint", default=str(default_ckpt))
     parser.add_argument("--tokenizer", default=str(ROOT / "checkpoints" / "tokenizer.json"))
     parser.add_argument("--prompt", default="\n")
     parser.add_argument("--max_new_tokens", type=int, default=200)

@@ -1,277 +1,877 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mini GPT</title>
-  <style>
-    :root {
-      --bg: #e3eadf; --panel: #f5f8f1; --ink: #16241c; --muted: #55655b;
-      --moss: #1f3b2b; --moss-ink: #eef4e8; --rule: #b9c6b4; --err: #8c2f1f; --note: #e9efdc;
-      color-scheme: light;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #111b15; --panel: #182419; --ink: #e4ece0; --muted: #9db0a2;
-        --moss: #cfe3b4; --moss-ink: #14241a; --rule: #2e4034; --err: #ff9d87; --note: #1e2d22;
-        color-scheme: dark;
-      }
-    }
-    * { box-sizing: border-box; }
-    html, body, #root { height: 100%; margin: 0; }
-    body { background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
-    .app { display: grid; grid-template-columns: minmax(0, 1fr) 290px; height: 100%; max-width: 1150px; margin: 0 auto; }
-    .chat { display: flex; flex-direction: column; min-height: 0; padding: 18px 24px; }
-    .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-    h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 500; font-size: 1.7rem; margin: 0; }
-    .meta { color: var(--muted); font-size: 0.82rem; margin: 4px 0 10px; }
-    .banner { background: var(--note); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; line-height: 1.45; margin-bottom: 10px; }
-    .log { flex: 1; overflow-y: auto; padding: 6px 0; }
-    .empty { color: var(--muted); max-width: 54ch; line-height: 1.5; }
-    .msg { margin: 0 0 16px; max-width: 70ch; }
-    .msg p { margin: 0; white-space: pre-wrap; line-height: 1.55; overflow-wrap: anywhere; }
-    .msg.user { margin-left: auto; background: var(--moss); color: var(--moss-ink); padding: 9px 13px; border-radius: 14px 14px 2px 14px; max-width: 80%; }
-    .msg.assistant { border-left: 2px solid var(--rule); padding-left: 13px; font-family: Georgia, "Times New Roman", serif; font-size: 1.08rem; }
-    .msg.empty-reply p, .msg.pending p { color: var(--muted); font-style: italic; }
-    .note { color: var(--muted); font-size: 0.82rem; margin: 0 0 10px; }
-    .error { color: var(--err); margin: 0 0 10px; }
-    .composer { display: flex; gap: 10px; align-items: flex-end; padding-top: 10px; border-top: 1px solid var(--rule); }
-    textarea { flex: 1; resize: none; font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 9px 12px; }
-    button { font: inherit; font-weight: 600; cursor: pointer; background: var(--moss); color: var(--moss-ink); border: 1px solid var(--moss); border-radius: 8px; padding: 9px 18px; }
-    button.ghost { background: transparent; color: var(--ink); border-color: var(--rule); padding: 5px 11px; font-weight: 500; font-size: 0.88rem; }
-    button:disabled { opacity: 0.45; cursor: not-allowed; }
-    button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid var(--moss); outline-offset: 2px; }
-    .side { background: var(--panel); border-left: 1px solid var(--rule); padding: 22px 18px; overflow-y: auto; }
-    .side h2 { font-size: 0.95rem; margin: 0 0 14px; }
-    .side label.field { display: block; margin-bottom: 18px; }
-    .side .row { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: 500; font-size: 0.92rem; }
-    .side input[type="range"] { width: 100%; accent-color: var(--moss); }
-    .side input[type="number"] { width: 100%; font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--rule); border-radius: 6px; padding: 5px 8px; }
-    .side small { display: block; margin-top: 4px; color: var(--muted); line-height: 1.4; font-size: 0.8rem; }
-    .modes { display: flex; gap: 6px; margin-bottom: 18px; }
-    .modes button { flex: 1; padding: 6px 8px; font-size: 0.86rem; background: transparent; color: var(--ink); border-color: var(--rule); }
-    .modes button[aria-pressed="true"] { background: var(--moss); color: var(--moss-ink); border-color: var(--moss); }
-    @media (max-width: 800px) {
-      .app { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
-      .side { border-left: 0; border-top: 1px solid var(--rule); max-height: 42%; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mini-gpt</title>
+<style>
+  :root {
+    --bg: #f7f3ec;
+    --ink: #2a2522;
+    --muted: #8f857b;
+    --line: #ddd5c8;
+    --accent: #e8766c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    display: flex;
+    justify-content: center;
+  }
+  .app {
+    width: 100%;
+    max-width: 640px;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 18px 20px 16px;
+  }
+
+  /* header */
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .logo { font-family: Georgia, "Times New Roman", serif; font-size: 20px; }
+  .logo span { color: var(--accent); }
+  .meta { font-size: 12px; color: var(--muted); display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .meta button {
+    background: none; border: none; color: var(--muted); font: inherit; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .meta button:hover { color: var(--ink); }
+
+  .model-select {
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font: inherit;
+    font-size: 11px;
+    color: var(--ink);
+    padding: 2px 6px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .model-select:hover, .model-select:focus {
+    border-color: var(--ink);
+  }
+
+  /* character stage */
+  .stage { position: relative; height: 172px; flex: none; margin-top: 8px; }
+  #walker {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 165px;
+    margin-left: -82px;
+    transition: transform 1.8s cubic-bezier(.45, .05, .35, 1);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  #hop { transform-origin: 50% 100%; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  #char { --dino: #ffae5c; }
+
+  .mood { text-align: center; font-size: 13px; color: var(--muted); font-style: italic; height: 22px; margin-top: 6px; }
+  .moods {
+    display: none; flex-wrap: wrap; justify-content: center; gap: 4px 12px;
+    font-size: 12px; margin: 2px 0 4px;
+  }
+  .moods.show { display: flex; }
+  .moods button {
+    background: none; border: none; color: var(--muted); font: inherit; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .moods button:hover { color: var(--accent); }
+
+  /* ---- character parts ---- */
+  .shadow { fill: rgba(60, 45, 40, .10); }
+  .line { stroke: #3f4a3a; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+  .dino { fill: var(--dino); }
+  .skin { fill: #ffe2cf; }
+  .mane { fill: color-mix(in srgb, var(--dino) 70%, #7a3a00); }
+  .ear-in { fill: #ffc9b8; }
+  .tail-o { fill: none; stroke: #3f4a3a; stroke-width: 11; stroke-linecap: round; }
+  .tail-f { fill: none; stroke: var(--dino); stroke-width: 5; stroke-linecap: round; }
+  #moveG { transform-origin: 120px 230px; }
+  #bob { animation: bob 3.2s ease-in-out infinite; transform-origin: 120px 230px; }
+  @keyframes bob {
+    0%,100% { transform: translateY(0) scale(1,1); }
+    25% { transform: translateY(-1px) scale(1.02,.98); }
+    50% { transform: translateY(-3px) scale(.99,1.015); }
+    75% { transform: translateY(-1px) scale(1.015,.985); }
+  }
+  #tail { transform-box: fill-box; transform-origin: 0% 50%; animation: tail 1.6s ease-in-out infinite; }
+  @keyframes tail { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(10deg); } }
+
+  svg[data-motion="bounce"] #moveG { animation: m-bounce .32s ease-in-out infinite alternate; }
+  svg[data-motion="shake"]  #moveG { animation: m-shake .09s linear infinite alternate; }
+  svg[data-motion="shake-s"]#moveG { animation: m-shake-s .12s linear infinite alternate; }
+  svg[data-motion="sob"]    #moveG { animation: m-sob .45s ease-in-out infinite; }
+  svg[data-motion="droop"]  #moveG { transform: scale(1.04,.94); }
+  svg[data-motion="tilt"]   #moveG { animation: m-tilt 3s ease-in-out infinite; }
+  svg[data-motion="wiggle"] #moveG { animation: m-wiggle .6s ease-in-out infinite; }
+  svg[data-motion="pop"]    #moveG { animation: m-pop .35s ease-out; }
+  @keyframes m-bounce { from { transform: translateY(0); } to { transform: translateY(-9px); } }
+  @keyframes m-shake  { from { transform: translateX(-3px); } to { transform: translateX(3px); } }
+  @keyframes m-shake-s{ from { transform: translateX(-1.5px); } to { transform: translateX(1.5px); } }
+  @keyframes m-sob    { 0%,100% { transform: translateY(0) scale(1,1); } 50% { transform: translateY(3px) scale(1.03,.95); } }
+  @keyframes m-tilt   { 0%,100% { transform: rotate(-5deg) translateY(2px); } 50% { transform: rotate(-8deg) translateY(4px); } }
+  @keyframes m-wiggle { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+  @keyframes m-pop    { 0% { transform: scale(1); } 40% { transform: scale(1.1,.92); } 100% { transform: scale(1); } }
+
+  /* arms */
+  .pose { transform-box: view-box; transform-origin: 74px 150px; transition: transform .35s cubic-bezier(.3,1.4,.5,1); }
+  .armsway { transform-box: view-box; transform-origin: 74px 150px; animation: armsway 3.2s ease-in-out infinite; }
+  .armsway.r { animation-delay: -1.6s; }
+  @keyframes armsway { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+  svg[data-rub="1"] .armsway { animation: rub .28s ease-in-out infinite alternate; }
+  @keyframes rub { from { transform: rotate(-6deg); } to { transform: rotate(7deg); } }
+  .sleeve-o { fill: none; stroke: #3f4a3a; stroke-width: 25; stroke-linecap: round; stroke-linejoin: round; }
+  .sleeve-f { fill: none; stroke: var(--dino); stroke-width: 19; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* face */
+  .eye, .brow, .cheek, .up, .dn, .ar, .heart { transition: transform .18s ease, opacity .18s ease; }
+  .eye, .brow, .heart { transform-box: fill-box; transform-origin: center; }
+  #eyes { transition: transform .14s ease-out; }
+  .up, .dn, .ar { fill: none; stroke: #2e2326; stroke-width: 5.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+  .brow { stroke: #5a4540; stroke-width: 3.8; stroke-linecap: round; opacity: 0; }
+  .heart { fill: #ff5c8a; opacity: 0; }
+  svg[data-heart="1"] .heart { animation: pulse .7s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.22); } }
+  #mouth { stroke: #7a2e40; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; fill: #d94f6a; transition: d .2s ease; }
+  #tongue { fill: #ff9fb0; transition: opacity .2s; }
+
+  #fx { font-size: 20px; font-family: Georgia, serif; animation: floaty 2s ease-in-out infinite; }
+  @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+  /* tears */
+  .tears { opacity: 0; transition: opacity .25s; }
+  svg[data-tears="1"] .tears, svg[data-tears="2"] .tears { opacity: 1; }
+  .stream { fill: url(#tearG); transform-box: fill-box; transform-origin: 50% 0; animation: stream 1.6s ease-in-out infinite; }
+  svg[data-tears="2"] .stream { animation-duration: .8s; transform: scaleX(1.7); }
+  @keyframes stream { 0% { transform: scaleY(.25); } 55% { transform: scaleY(1); } 100% { transform: scaleY(.85); } }
+  .drop { fill: #b6e3ff; stroke: #84c4ee; stroke-width: 1; animation: drip 1.1s ease-in infinite; }
+  .drop.b { animation-delay: -.55s; }
+  svg[data-tears="2"] .drop { animation-duration: .55s; }
+  @keyframes drip { 0% { transform: translateY(-6px) scale(.6); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateY(30px) scale(1); opacity: 0; } }
+
+  #sweat { opacity: 0; transition: opacity .2s; }
+  svg[data-sweat="1"] #sweat { opacity: 1; animation: floaty 1s ease-in-out infinite; }
+  #anger { opacity: 0; fill: none; stroke: #e5484d; stroke-width: 3.5; stroke-linecap: round; transform-box: fill-box; transform-origin: center; }
+  svg[data-anger="1"] #anger { opacity: 1; animation: pulse .5s ease-in-out infinite; }
+
+  /* ---- chat ---- */
+  #log { flex: 1; overflow-y: auto; padding: 10px 2px 14px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  .msg { margin: 0 0 16px; max-width: 86%; white-space: pre-wrap; word-wrap: break-word; }
+  .msg.me { margin-left: auto; background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 14px 14px 3px 14px; }
+  .msg.bot { padding-left: 12px; border-left: 2px solid var(--accent); position: relative; }
+  .msg.err { color: var(--accent); }
+  .empty { color: var(--muted); text-align: center; margin-top: 18px; font-size: 14px; }
+
+  .msg-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+    font-size: 11px;
+  }
+  .action-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font: inherit;
+    font-size: 11px;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color .15s;
+  }
+  .action-btn:hover {
+    color: var(--ink);
+  }
+
+  form { display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px; }
+  #input {
+    flex: 1; background: transparent; border: none; border-bottom: 1.5px solid var(--line);
+    padding: 8px 2px; font: inherit; color: var(--ink); outline: none; transition: border-color .15s;
+  }
+  #input:focus { border-bottom-color: var(--ink); }
+  #input::placeholder { color: #b8ad9e; }
+  #send {
+    background: var(--accent); color: #fff; border: none; border-radius: 999px;
+    padding: 8px 18px; font: inherit; font-size: 14px; cursor: pointer; transition: transform .1s, opacity .15s;
+  }
+  #send:hover { transform: translateY(-1px); }
+  #send:active { transform: translateY(1px); }
+  #send:disabled { opacity: .45; cursor: default; transform: none; }
+</style>
 </head>
 <body>
-  <div id="root"></div>
+<div class="app">
 
-  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.25.6/babel.min.js"></script>
+  <header>
+    <div class="logo">mini<span>-</span>gpt</div>
+    <div class="meta" id="headerMeta">
+      <span id="modelInfo">Loading model…</span>
+      <select id="modelSelector" class="model-select" title="Switch Model">
+        <option value="chat">Chat Model (3.21M)</option>
+        <option value="shakespeare">Shakespeare (818K)</option>
+      </select>
+      <button id="flavorBtn" type="button">color</button>
+      <button id="facesBtn" type="button">faces</button>
+      <button id="clear" type="button">new chat</button>
+    </div>
+  </header>
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+  <div class="stage" id="stage">
+    <div id="walker" title="poke me">
+      <div id="hop">
+        <svg id="char" viewBox="0 0 240 240" data-motion="" data-tears="0" data-sweat="0" data-anger="0" data-rub="0" data-heart="0" aria-label="baby in a lion onesie">
+          <defs>
+            <linearGradient id="tearG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#bfe6ff" stop-opacity=".95"/>
+              <stop offset="1" stop-color="#9bd3f5" stop-opacity=".55"/>
+            </linearGradient>
+            <filter id="blur4" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+            <clipPath id="mouthClip"><path id="mouthClipPath" d="M0 0"/></clipPath>
+          </defs>
 
-    const STORAGE_KEY = "mini-gpt-chat-v1";
-    const FALLBACK = { max_new_tokens: 200, temperature: 0.8, top_k: 40 };
-    const MAX_HISTORY = 12;   // messages sent back to the model in chat mode
+          <ellipse class="shadow" cx="120" cy="233" rx="80" ry="7"/>
 
-    function readSaved() {
-      try { return JSON.parse(window.localStorage.getItem(STORAGE_KEY)) || {}; }
-      catch (e) { return {}; }
+          <g id="moveG"><g id="bob">
+            <!-- tail -->
+            <g id="tail">
+              <path class="tail-o" d="M166 206 Q204 214 212 178"/>
+              <path class="tail-f" d="M166 206 Q204 214 212 178"/>
+              <ellipse class="line mane" cx="213" cy="172" rx="11" ry="14" transform="rotate(12 213 172)"/>
+            </g>
+            <!-- feet -->
+            <ellipse class="line dino" cx="90" cy="226" rx="21" ry="10"/>
+            <ellipse class="line dino" cx="150" cy="226" rx="21" ry="10"/>
+            <!-- onesie body -->
+            <path class="line dino" d="M72 156 C72 142 94 140 120 140 C146 140 168 142 168 156 L176 204 C178 224 156 231 120 231 C84 231 62 224 64 204 Z"/>
+            <ellipse cx="120" cy="198" rx="30" ry="24" fill="#fff" opacity=".35"/>
+
+            <!-- lion mane + ears (behind hood) -->
+            <circle class="line mane" cx="135.6" cy="31.8" r="19"/>
+            <circle class="line mane" cx="163.6" cy="45.3" r="19"/>
+            <circle class="line mane" cx="183.1" cy="69.6" r="19"/>
+            <circle class="line mane" cx="190.0" cy="100.0" r="19"/>
+            <circle class="line mane" cx="183.1" cy="130.4" r="19"/>
+            <circle class="line mane" cx="163.6" cy="154.7" r="19"/>
+            <circle class="line mane" cx="135.6" cy="168.2" r="19"/>
+            <circle class="line mane" cx="104.4" cy="168.2" r="19"/>
+            <circle class="line mane" cx="76.4" cy="154.7" r="19"/>
+            <circle class="line mane" cx="56.9" cy="130.4" r="19"/>
+            <circle class="line mane" cx="50.0" cy="100.0" r="19"/>
+            <circle class="line mane" cx="56.9" cy="69.6" r="19"/>
+            <circle class="line mane" cx="76.4" cy="45.3" r="19"/>
+            <circle class="line mane" cx="104.4" cy="31.8" r="19"/>
+            <circle class="line dino" cx="70" cy="48" r="15"/><circle class="ear-in" cx="70" cy="49" r="8"/>
+            <circle class="line dino" cx="170" cy="48" r="15"/><circle class="ear-in" cx="170" cy="49" r="8"/>
+            
+            <!-- hood + face -->
+            <circle class="line dino" cx="120" cy="100" r="64"/>
+            <ellipse class="line skin" cx="120" cy="103" rx="54" ry="50"/>
+
+            <!-- face features (scaled down to baby proportions) -->
+            <g transform="translate(120 106) scale(.72) translate(-120 -118)">
+            <g transform="translate(0 10)">
+              <ellipse class="cheek" cx="62" cy="121" rx="15" ry="10" fill="#ff8fab" filter="url(#blur4)" opacity=".7"/>
+              <ellipse class="cheek" cx="178" cy="121" rx="15" ry="10" fill="#ff8fab" filter="url(#blur4)" opacity=".7"/>
+
+              <g id="eyes">
+                <g class="eye" id="eyeL">
+                  <ellipse cx="82" cy="97" rx="10.5" ry="13" fill="#2e2326"/>
+                  <circle cx="78.5" cy="91" r="4.2" fill="#fff"/><circle cx="86" cy="103" r="2" fill="#fff" opacity=".8"/>
+                </g>
+                <g class="eye" id="eyeR">
+                  <ellipse cx="158" cy="97" rx="10.5" ry="13" fill="#2e2326"/>
+                  <circle cx="154.5" cy="91" r="4.2" fill="#fff"/><circle cx="162" cy="103" r="2" fill="#fff" opacity=".8"/>
+                </g>
+              </g>
+              <path class="up" id="upL" d="M71 105 L82 90 L93 105"/>
+              <path class="up" id="upR" d="M147 105 L158 90 L169 105"/>
+              <path class="ar" id="arL" d="M73 89 L91 100 L73 111"/>
+              <path class="ar" id="arR" d="M167 89 L149 100 L167 111"/>
+              <path class="dn" id="dnL" d="M73 95 Q82 107 91 95"/>
+              <path class="dn" id="dnR" d="M149 95 Q158 107 167 95"/>
+              <g transform="translate(82 97)"><path class="heart" id="htL" d="M0 -3 C-7 -11 -17 -2 0 10 C17 -2 7 -11 0 -3Z"/></g>
+              <g transform="translate(158 97)"><path class="heart" id="htR" d="M0 -3 C-7 -11 -17 -2 0 10 C17 -2 7 -11 0 -3Z"/></g>
+
+              <line class="brow" id="browL" x1="68" y1="78" x2="96" y2="78"/>
+              <line class="brow" id="browR" x1="144" y1="78" x2="172" y2="78"/>
+
+              <path id="mouth" d="M111 120 Q120 123 129 120 Q120 134 111 120 Z"/>
+              <ellipse id="tongue" cx="120" cy="128" rx="6" ry="3" clip-path="url(#mouthClip)"/>
+
+              <g class="tears">
+                <rect class="stream" x="78" y="106" width="8" height="52" rx="4"/>
+                <rect class="stream" x="154" y="106" width="8" height="52" rx="4"/>
+                <ellipse class="drop" cx="82" cy="152" rx="4.5" ry="6"/>
+                <ellipse class="drop b" cx="158" cy="152" rx="4.5" ry="6"/>
+              </g>
+            </g>
+            </g>
+
+            <!-- extras -->
+            <path id="sweat" d="M200 66 Q208 80 200 88 Q192 80 200 66Z" fill="#b6e3ff" stroke="#84c4ee" stroke-width="1.5"/>
+            <path id="anger" d="M190 30 q7 2 9 -7 M210 30 q-7 2 -9 -7 M190 44 q7 -2 9 7 M210 44 q-7 -2 -9 7"/>
+
+            <!-- left arm -->
+            <g id="armL" class="pose" style="transform:rotate(-12deg)">
+              <g class="armsway">
+                <path class="sleeve-o" d="M74 150 Q52 148 34 158"/>
+                <path class="sleeve-f" d="M74 150 Q52 148 34 158"/>
+                <circle class="line skin" cx="30" cy="160" r="10.5"/>
+              </g>
+            </g>
+            <!-- right arm (mirrored) -->
+            <g transform="translate(240 0) scale(-1 1)">
+              <g id="armR" class="pose" style="transform:rotate(-12deg)">
+                <g class="armsway r">
+                  <path class="sleeve-o" d="M74 150 Q52 148 34 158"/>
+                  <path class="sleeve-f" d="M74 150 Q52 148 34 158"/>
+                  <circle class="line skin" cx="30" cy="160" r="10.5"/>
+                </g>
+              </g>
+            </g>
+
+            <text id="fx" x="200" y="44"></text>
+          </g></g>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <div class="mood" id="mood">&nbsp;</div>
+  <div class="moods" id="moods"></div>
+
+  <div id="log"><div class="empty" id="empty">say something. i'm listening.</div></div>
+
+  <form id="form" autocomplete="off">
+    <input id="input" placeholder="type a message…" maxlength="400" autofocus>
+    <button id="send" type="submit">send</button>
+  </form>
+</div>
+
+<script>
+/* ============ CONFIG: connects directly to FastAPI backend ============ */
+const BACKEND_URL = (window.location.protocol === "file:" || (window.location.port && window.location.port !== "8000")) 
+  ? "http://127.0.0.1:8000" 
+  : "";
+/* ======================================================================= */
+
+const $ = id => document.getElementById(id);
+const svg = $('char'), walker = $('walker'), hop = $('hop'), stage = $('stage');
+const eyes = $('eyes'), mouth = $('mouth'), tongue = $('tongue'), mouthClipPath = $('mouthClipPath');
+const fx = $('fx'), moodEl = $('mood');
+const browL = $('browL'), browR = $('browR'), armL = $('armL'), armR = $('armR');
+const cheeks = document.querySelectorAll('.cheek');
+const log = $('log'), input = $('input'), send = $('send'), form = $('form');
+const modelSelector = $('modelSelector'), modelInfo = $('modelInfo');
+const E = {
+  L: { open: $('eyeL'), up: $('upL'), dn: $('dnL'), ar: $('arL'), heart: $('htL') },
+  R: { open: $('eyeR'), up: $('upR'), dn: $('dnR'), ar: $('arR'), heart: $('htR') },
+};
+
+/* Fetch model info and models list */
+async function loadModels() {
+  try {
+    const res = await fetch(BACKEND_URL + '/api/models');
+    if (res.ok) {
+      const data = await res.json();
+      modelSelector.innerHTML = '';
+      data.models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.name;
+        opt.selected = m.active;
+        modelSelector.appendChild(opt);
+      });
     }
-
-    async function errorText(response) {
-      let detail = null;
-      try { detail = (await response.json()).detail; } catch (e) { /* not JSON */ }
-      if (Array.isArray(detail)) return detail.map((d) => d.msg).join("; ");
-      return detail || "Server returned " + response.status;
+    const infoRes = await fetch(BACKEND_URL + '/api/info');
+    if (infoRes.ok) {
+      const info = await infoRes.json();
+      const p = (info.parameters / 1000000).toFixed(2);
+      const dev = info.device || 'cpu';
+      modelInfo.textContent = `${p}M params · ${dev}`;
     }
+  } catch (e) {
+    modelInfo.textContent = '3.21M params · cpu';
+  }
+}
+loadModels();
 
-    function App() {
-      const saved = useRef(readSaved()).current;
-      const [info, setInfo] = useState(null);
-      const [infoError, setInfoError] = useState("");
-      const [messages, setMessages] = useState(saved.messages || []);
-      const [mode, setMode] = useState(saved.mode || "chat");
-      const [settings, setSettings] = useState({ ...FALLBACK, ...(saved.settings || {}) });
-      const [seed, setSeed] = useState("");
-      const [input, setInput] = useState("");
-      const [loading, setLoading] = useState(false);
-      const [error, setError] = useState("");
-      const [ignored, setIgnored] = useState([]);
-      const endRef = useRef(null);
+/* Model Selector Change Handler */
+modelSelector.addEventListener('change', async (e) => {
+  const selected = e.target.value;
+  try {
+    const res = await fetch(BACKEND_URL + '/api/models/select', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ model: selected })
+    });
+    if (res.ok) {
+      poke(); hopAnim(0, 1);
+      temp('wink', 1600, 'neutral', `switched to ${selected}`);
+      loadModels();
+    }
+  } catch (err) {
+    temp('cry', 2000, 'neutral', 'failed to switch model');
+  }
+});
 
-      useEffect(() => {
-        fetch("api/info")
-          .then(async (r) => { if (!r.ok) throw new Error(await errorText(r)); return r.json(); })
-          .then(setInfo)
-          .catch((e) => setInfoError(String(e.message || e)));
-      }, []);
+/* ---------- mouths ---------- */
+const mp = m => `M${m.x1} ${m.y} Q120 ${m.t} ${m.x2} ${m.y} Q120 ${m.b} ${m.x1} ${m.y} Z`;
+const M = {
+  smile:  {x1:111, x2:129, y:120, t:123, b:134},
+  happy:  {x1:107, x2:133, y:119, t:123, b:140},
+  grin:   {x1:103, x2:137, y:118, t:123, b:146},
+  laugh:  {x1:100, x2:140, y:116, t:120, b:152},
+  tiny:   {x1:113, x2:127, y:122, t:125, b:125},
+  flat:   {x1:112, x2:128, y:125, t:125, b:125},
+  o:      {x1:113, x2:127, y:121, t:116, b:140},
+  smirk:  {x1:109, x2:134, y:120, t:124, b:130},
+  frown:  {x1:109, x2:131, y:130, t:121, b:121},
+  cry:    {x1:107, x2:133, y:128, t:118, b:140},
+  wail:   {x1:102, x2:138, y:122, t:117, b:154},
+  scared: {x1:108, x2:132, y:130, t:122, b:140},
+  gritted:{x1:108, x2:132, y:128, t:122, b:122},
+  yawn:   {x1:112, x2:128, y:124, t:118, b:148},
+};
+function setMouth(m) {
+  const d = mp(m);
+  mouth.style.d = `path("${d}")`; mouth.setAttribute('d', d);
+  mouthClipPath.setAttribute('d', d);
+  const open = m.b - m.y;
+  tongue.setAttribute('cx', 120);
+  tongue.setAttribute('cy', m.y + open * .42);
+  tongue.setAttribute('rx', Math.max(3, (m.x2 - m.x1) * .24));
+  tongue.setAttribute('ry', Math.max(2, open * .2));
+  tongue.style.opacity = open > 11 ? 1 : 0;
+}
 
-      useEffect(() => {
-        try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, mode, settings })); }
-        catch (e) { /* storage unavailable: chat still works */ }
-      }, [messages, mode, settings]);
+/* ---------- faces ---------- */
+const F = {
+  neutral:  { mouth:M.smile, eL:'open', eR:'open', es:1, ey:1, br:0, cheek:.7, arms:[null,null], text:'' },
+  happy:    { mouth:M.happy, eL:'up', eR:'up', br:0, cheek:1, arms:[18,18], fx:'♪', fxc:'#e8a0b4', text:'happy' },
+  laugh:    { mouth:M.laugh, eL:'ar', eR:'ar', br:0, cheek:1, arms:[-105,-105], motion:'bounce', fx:'ha ha', fxc:'#c9a0d8', text:'hahaha!' },
+  yay:      { mouth:M.grin,  eL:'up', eR:'up', br:0, cheek:1, arms:[100,100], motion:'bounce', fx:'✦ ✦', fxc:'#f0b24a', text:'yay!' },
+  giggle:   { mouth:M.grin,  eL:'up', eR:'up', br:0, cheek:1, arms:[40,40], motion:'shake-s', fx:'hehe', fxc:'#e8a0b4', text:'hehe' },
+  wink:     { mouth:M.smirk, eL:'up', eR:'open', es:1, ey:1, br:0, cheek:.9, arms:[null,85], text:'hey!' },
+  love:     { mouth:M.happy, eL:'heart', eR:'heart', br:0, cheek:1, arms:[100,100], motion:'wiggle', fx:'♥ ♥', fxc:'#ff5c8a', heart:1, text:'aww' },
+  shy:      { mouth:M.tiny,  eL:'up', eR:'up', br:0, cheek:1, arms:[106,106], motion:'wiggle', fx:'///', fxc:'#ff8fab', text:'shy…' },
+  thinking: { mouth:M.flat,  eL:'open', eR:'open', es:1, ey:1, bL:[-3,-6], bR:[1,10], br:1, cheek:.5, arms:[100,null], look:[6,-6], fx:'…', fxc:'#8f857b', text:'thinking…' },
+  curious:  { mouth:M.o,     eL:'open', eR:'open', es:1.12, ey:1.12, bL:[-7,0], bR:[-7,0], br:1, cheek:.6, arms:[8,8], look:[0,6], text:'' },
+  surprised:{ mouth:M.o,     eL:'open', eR:'open', es:1.25, ey:1.25, bL:[-9,0], bR:[-9,0], br:1, cheek:.5, arms:[85,85], motion:'pop', fx:'!', fxc:'#e8766c', text:'oh!' },
+  scared:   { mouth:M.scared,eL:'open', eR:'open', es:.85, ey:.95, bL:[-4,-16], bR:[-4,16], br:1, cheek:.2, arms:[112,112], motion:'shake', sweat:1, text:'eek!' },
+  ouch:     { mouth:{x1:106, x2:134, y:124, t:118, b:146}, eL:'ar', eR:'ar', bL:[2,-14], bR:[2,14], br:1, cheek:1, arms:[115,115], motion:'shake-s', sweat:1, fx:'!?', fxc:'#e8766c', text:'ouch!' },
+  sad:      { mouth:M.frown, eL:'open', eR:'open', es:1, ey:.95, bL:[1,-16], bR:[1,16], br:1, cheek:.3, arms:[-60,-60], motion:'droop', look:[0,4], text:'oh no…' },
+  cry:      { mouth:M.cry,   eL:'dn', eR:'dn', bL:[1,-17], bR:[1,17], br:1, cheek:1, arms:[120,120], motion:'sob', tears:1, rub:1, text:'sniff… sniff…' },
+  bawl:     { mouth:M.wail,  eL:'ar', eR:'ar', bL:[0,-20], bR:[0,20], br:1, cheek:1, arms:[80,80], motion:'shake', tears:2, rub:1, text:'waaaah!' },
+  angry:    { mouth:M.gritted, eL:'open', eR:'open', es:.95, ey:.75, bL:[3,18], bR:[3,-18], br:1, cheek:1, arms:[-40,-40], motion:'shake-s', anger:1, text:'hmph!' },
+  sleepy:   { mouth:M.yawn,  eL:'open', eR:'open', es:1, ey:.1, br:0, cheek:.7, arms:[-45,-45], motion:'tilt', look:[0,2], fx:'z z', fxc:'#9a8fc0', text:'sleepy…' },
+};
+const NAMES = ['happy','laugh','yay','giggle','wink','love','shy','thinking','surprised','scared','ouch','sad','cry','bawl','angry','sleepy'];
 
-      useEffect(() => {
-        if (endRef.current) endRef.current.scrollIntoView({ behavior: "smooth" });
-      }, [messages, loading]);
+let face = 'neutral', lookOverride = null, curEye = {};
 
-      const limits = (info && info.limits) || { max_new_tokens: [1, 500], temperature: [0, 2], top_k: [1, 65] };
-      const defaults = (info && info.defaults) || FALLBACK;
-      const set = (key) => (e) => setSettings((s) => ({ ...s, [key]: Number(e.target.value) }));
+function setEye(side, type, es, ey) {
+  const g = E[side];
+  ['open','up','dn','ar','heart'].forEach(k => { g[k].style.opacity = (k === type) ? 1 : 0; });
+  g.open.style.transform = `scale(${es}, ${ey})`;
+  curEye[side] = { type, es, ey };
+}
+function setHand(el, deg) {
+  el.style.transform = `rotate(${deg === null || deg === undefined ? -12 : deg}deg)`;
+}
 
-      async function send() {
-        const text = input.trim();
-        if (!text || loading) return;
-        const next = [...messages, { role: "user", content: text }];
-        setMessages(next);
-        setInput("");
-        setError("");
-        setLoading(true);
+function setFace(name, opts = {}) {
+  const f = F[name]; if (!f) return;
+  face = name;
+  const es = f.es ?? 1, ey = f.ey ?? 1;
+  setEye('L', f.eL, es, ey); setEye('R', f.eR, es, ey);
+  setMouth(f.mouth);
+  const bL = f.bL || [0,0], bR = f.bR || [0,0];
+  browL.style.transform = `translateY(${bL[0]}px) rotate(${bL[1]}deg)`;
+  browR.style.transform = `translateY(${bR[0]}px) rotate(${bR[1]}deg)`;
+  browL.style.opacity = browR.style.opacity = f.br ? 1 : 0;
+  cheeks.forEach(c => c.style.opacity = Math.min(1, f.cheek));
+  setHand(armL, f.arms[0]); setHand(armR, f.arms[1]);
+  svg.dataset.motion = f.motion || '';
+  svg.dataset.tears = f.tears || 0;
+  svg.dataset.sweat = f.sweat || 0;
+  svg.dataset.anger = f.anger || 0;
+  svg.dataset.rub = f.rub || 0;
+  svg.dataset.heart = f.heart || 0;
+  fx.textContent = f.fx || '';
+  fx.setAttribute('fill', f.fxc || '#8f857b');
+  lookOverride = f.look || null;
+  applyLook();
+  moodEl.innerHTML = opts.text ?? (f.text || '&nbsp;');
+  if (f.motion === 'pop') { svg.dataset.motion = ''; void svg.getBoundingClientRect(); svg.dataset.motion = 'pop'; }
+}
 
-        const common = { ...settings };
-        if (seed !== "") common.seed = Number(seed);
+/* ---------- looking around ---------- */
+let mouse = null;
+function applyLook() {
+  let x = 0, y = 0;
+  if (lookOverride) [x, y] = lookOverride;
+  else if (mouse) {
+    const r = walker.getBoundingClientRect();
+    const dx = mouse.x - (r.left + r.width / 2), dy = mouse.y - (r.top + r.height / 2);
+    const d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 220);
+    x = dx / d * 5 * k; y = dy / d * 4 * k;
+  }
+  eyes.style.transform = `translate(${x}px, ${y}px)`;
+}
+addEventListener('mousemove', e => { mouse = {x:e.clientX, y:e.clientY}; applyLook(); });
 
+/* ---------- blinking ---------- */
+(function blinkLoop() {
+  setTimeout(() => {
+    ['L','R'].forEach(s => {
+      const c = curEye[s];
+      if (c && c.type === 'open' && c.ey > .5) {
+        E[s].open.style.transform = `scale(${c.es}, .08)`;
+        const snap = c, name = face;
+        setTimeout(() => { if (face === name) E[s].open.style.transform = `scale(${snap.es}, ${snap.ey})`; }, 120);
+      }
+    });
+    blinkLoop();
+  }, 2200 + Math.random() * 3200);
+})();
+
+/* ---------- movement ---------- */
+let wanderX = 0, busy = false, lastAct = Date.now(), faceTimer = null;
+
+function hopAnim(dir = 0, big = 1) {
+  hop.animate([
+    { transform: 'translateY(0) scale(1,1) rotate(0deg)' },
+    { transform: 'translateY(0) scale(1.07,.92) rotate(0deg)', offset: .15 },
+    { transform: `translateY(${-26 * big}px) scale(.95,1.07) rotate(${dir * 6}deg)`, offset: .5 },
+    { transform: 'translateY(0) scale(1.08,.9) rotate(0deg)', offset: .85 },
+    { transform: 'translateY(0) scale(1,1) rotate(0deg)' }
+  ], { duration: 560, easing: 'ease-in-out' });
+}
+function temp(name, ms, then = 'neutral', text) {
+  clearTimeout(faceTimer);
+  setFace(name, text !== undefined ? {text} : {});
+  faceTimer = setTimeout(() => setFace(then), ms);
+}
+function wander() {
+  setTimeout(() => {
+    const calm = ['neutral','happy','wink','curious'].includes(face);
+    if (!busy && calm) {
+      const range = Math.max(0, (stage.clientWidth - 175) / 2);
+      const nx = (Math.random() * 2 - 1) * range;
+      const dir = Math.sign(nx - wanderX) || 1;
+      wanderX = nx;
+      walker.style.transform = `translateX(${nx}px)`;
+      hopAnim(dir, .7);
+      setTimeout(() => hopAnim(dir, .5), 650);
+      setTimeout(() => hopAnim(dir, .4), 1300);
+      if (Math.random() < .3) temp(['wink','happy','curious','giggle'][Math.floor(Math.random()*4)], 1700);
+    }
+    wander();
+  }, 4000 + Math.random() * 4000);
+}
+wander();
+
+/* poking the character */
+let pokes = 0, pokeTimes = [];
+const POKE_FACES = ['giggle','surprised','wink','happy','shy','love'];
+walker.addEventListener('click', () => {
+  poke();
+  const now = Date.now();
+  pokeTimes = pokeTimes.filter(t => now - t < 3000); pokeTimes.push(now);
+  hopAnim(0, 1.1);
+  if (pokeTimes.length >= 6) { temp('angry', 2200, 'neutral', 'hey! stop poking!'); pokeTimes = []; return; }
+  temp(POKE_FACES[pokes++ % POKE_FACES.length], 1500);
+});
+
+/* ---------- idle → sleepy ---------- */
+function poke() {
+  lastAct = Date.now();
+  if (face === 'sleepy') { temp('surprised', 900); hopAnim(0, .5); }
+}
+setInterval(() => {
+  if (!busy && face !== 'sleepy' && Date.now() - lastAct > 25000) { clearTimeout(faceTimer); setFace('sleepy'); }
+}, 1000);
+['keydown', 'touchstart'].forEach(ev => addEventListener(ev, poke));
+
+/* ---------- typing reactions ---------- */
+let typingTimer = null;
+input.addEventListener('input', () => {
+  if (busy) return;
+  lastAct = Date.now();
+  if (face !== 'curious') { clearTimeout(faceTimer); setFace('curious', {text: 'ooh, go on…'}); }
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => { if (!busy) setFace('neutral'); }, 1400);
+});
+
+/* ---------- talking ---------- */
+let talkTimer = null;
+function startTalk() {
+  clearTimeout(faceTimer);
+  setFace('neutral', {text: 'talking…'});
+  if (!talkTimer) {
+    talkTimer = setInterval(() => {
+      const open = [0, 4, 9, 14][Math.floor(Math.random() * 4)];
+      setMouth({x1:109, x2:131, y:120, t:122, b:124 + open});
+    }, 120);
+  }
+}
+function stopTalk() { clearInterval(talkTimer); talkTimer = null; }
+
+/* ---------- mood from the user's words ---------- */
+function moodFor(t) {
+  t = t.toLowerCase();
+  if (/\b(ouch|ow|pain|hurt|hurts)\b/.test(t)) return 'ouch';
+  if (/\b(yay|congrats|congratulations|won|win|party)\b/.test(t)) return 'yay';
+  if (/\b(sad|cry|crying|sorry|lonely|miss you|alone)\b/.test(t)) return 'cry';
+  if (/\b(love|like you|thanks|thank you|cute|sweet|best)\b/.test(t)) return 'love';
+  if (/\b(angry|hate|stupid|dumb|idiot|shut up|bad)\b/.test(t)) return 'angry';
+  if (/\b(haha|lol|funny|joke|hehe)\b/.test(t)) return 'laugh';
+  if (/\b(scary|ghost|dark|monster|afraid|scared|help)\b/.test(t)) return 'scared';
+  if (/\b(wow|omg|really|whoa|amazing)\b/.test(t)) return 'surprised';
+  if (/\b(bye|goodnight|sleep|tired)\b/.test(t)) return 'sleepy';
+  if (/\b(hi|hello|hey)\b/.test(t)) return 'wink';
+  return 'happy';
+}
+
+/* ---------- chat helpers ---------- */
+function addMsg(text, cls, allowActions = false) {
+  const e = $('empty'); if (e) e.remove();
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  
+  const span = document.createElement('span');
+  span.className = 'msg-text';
+  span.textContent = text;
+  d.appendChild(span);
+
+  if (cls.includes('bot') && allowActions) {
+    attachActions(d, span);
+  }
+
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+  return d;
+}
+
+function attachActions(msgEl, textSpan) {
+  // Remove existing action bars from previous messages
+  document.querySelectorAll('.regen-btn').forEach(b => b.remove());
+
+  const actions = document.createElement('div');
+  actions.className = 'msg-actions';
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'action-btn copy-btn';
+  copyBtn.textContent = 'copy';
+  copyBtn.title = 'Copy response';
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(textSpan.textContent);
+    copyBtn.textContent = 'copied!';
+    setTimeout(() => { copyBtn.textContent = 'copy'; }, 1800);
+  });
+  actions.appendChild(copyBtn);
+
+  const regenBtn = document.createElement('button');
+  regenBtn.className = 'action-btn regen-btn';
+  regenBtn.textContent = '↺ regenerate';
+  regenBtn.title = 'Regenerate another answer';
+  regenBtn.addEventListener('click', () => {
+    regenerateLast();
+  });
+  actions.appendChild(regenBtn);
+
+  msgEl.appendChild(actions);
+}
+
+/* Conversational history array */
+let history = [];
+
+/* Real-Time Token Streaming */
+async function streamChat(promptText, textSpan) {
+  const recent = history.slice(-12);
+  const response = await fetch(BACKEND_URL + "/api/chat/stream", {
+    method: "POST",
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      messages: recent,
+      max_new_tokens: 200,
+      temperature: 0.7,
+      top_k: 40,
+      repetition_penalty: 1.1
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('server status ' + response.status);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let accumulated = "";
+  let buffer = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split("\n\n");
+    buffer = lines.pop() || "";
+
+    for (const block of lines) {
+      const line = block.trim();
+      if (line.startsWith("data: ")) {
+        const payload = line.slice(6).trim();
+        if (payload === "[DONE]") {
+          return accumulated;
+        }
         try {
-          let url, body;
-          if (mode === "chat") {
-            const history = next.filter((m) => !m.placeholder).slice(-MAX_HISTORY)
-              .map((m) => ({ role: m.role, content: m.content }));
-            url = "api/chat";
-            body = { messages: history, ...common };
-          } else {
-            url = "api/generate";
-            body = { prompt: text, ...common };
+          const parsed = JSON.parse(payload);
+          if (parsed.delta) {
+            // Stop immediately if [EOS] appears
+            if (parsed.delta.includes("[EOS]") || accumulated.includes("[EOS]")) {
+              accumulated = accumulated.replace("[EOS]", "");
+              textSpan.textContent = accumulated;
+              return accumulated;
+            }
+            accumulated += parsed.delta;
+            textSpan.textContent = accumulated;
+            log.scrollTop = log.scrollHeight;
           }
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-          if (!response.ok) throw new Error(await errorText(response));
-          const data = await response.json();
-          const reply = mode === "chat" ? data.reply : data.text;
-          setIgnored(data.ignored_characters || []);
-          setMessages(reply
-            ? [...next, { role: "assistant", content: reply }]
-            : [...next, { role: "assistant", content: "(no reply: try again, or raise the temperature)", placeholder: true }]);
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
         } catch (e) {
-          setError("Could not get a reply: " + (e.message || e));
-        } finally {
-          setLoading(false);
+          if (payload.includes("[DONE]")) return accumulated;
         }
       }
-
-      function onKeyDown(e) {
-        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
-      }
-
-      const topKOn = settings.top_k !== null && settings.top_k !== undefined;
-
-      return (
-        <div className="app">
-          <main className="chat">
-            <div className="head">
-              <h1>Mini GPT</h1>
-              <button className="ghost" onClick={() => { setMessages([]); setIgnored([]); setError(""); }}
-                      disabled={!messages.length}>Clear chat</button>
-            </div>
-            <p className="meta">
-              {info
-                ? info.parameters.toLocaleString() + " parameters · context " + info.context_length +
-                  " characters · trained " + (info.checkpoint_step || 0).toLocaleString() + " steps" +
-                  (info.best_val_loss ? " · validation loss " + info.best_val_loss.toFixed(2) : "") +
-                  " · running on " + info.device
-                : infoError ? "Model not available: " + infoError : "Loading model information…"}
-            </p>
-            <div className="banner">
-              This model was trained from scratch on a small text file, so it writes in the style of
-              that text. <b>Chat</b> mode lays your messages out like a play script and shows what
-              "BOT" says next. <b>Continue</b> mode simply carries on from your text. Expect
-              Shakespeare-flavoured fragments, not answers.
-            </div>
-
-            <div className="log" aria-live="polite">
-              {messages.length === 0 && (
-                <p className="empty">Type something below and press Enter. Try "ROMEO:" in Continue mode.</p>
-              )}
-              {messages.map((m, i) => (
-                <div key={i} className={"msg " + m.role + (m.placeholder ? " empty-reply" : "")}>
-                  <p>{m.content}</p>
-                </div>
-              ))}
-              {loading && <div className="msg assistant pending"><p>Generating…</p></div>}
-              {ignored.length > 0 && (
-                <p className="note">
-                  Skipped characters the model has never seen: {ignored.map((c) => JSON.stringify(c)).join(" ")}
-                </p>
-              )}
-              {error && <p className="error" role="alert">{error}</p>}
-              <div ref={endRef} />
-            </div>
-
-            <div className="composer">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={onKeyDown}
-                placeholder="Enter sends, Shift+Enter adds a line"
-                aria-label="Your message"
-                rows={2}
-                maxLength={2000}
-              />
-              <button onClick={send} disabled={loading || !input.trim() || !info}>Send</button>
-            </div>
-          </main>
-
-          <aside className="side">
-            <h2>Mode</h2>
-            <div className="modes" role="group" aria-label="Mode">
-              <button aria-pressed={mode === "chat"} onClick={() => setMode("chat")}>Chat</button>
-              <button aria-pressed={mode === "continue"} onClick={() => setMode("continue")}>Continue</button>
-            </div>
-
-            <h2>Generation settings</h2>
-
-            <label className="field">
-              <span className="row"><span>Temperature</span><b>{settings.temperature}</b></span>
-              <input type="range" min={limits.temperature[0]} max={limits.temperature[1]} step="0.1"
-                     value={settings.temperature} onChange={set("temperature")} />
-              <small>0 always picks the likeliest character. Higher is more varied, and more garbled.</small>
-            </label>
-
-            <label className="field">
-              <span className="row">
-                <span><input type="checkbox" checked={topKOn}
-                  onChange={(e) => setSettings((s) => ({ ...s, top_k: e.target.checked ? defaults.top_k : null }))} />
-                  {" "}Top-k</span>
-                <b>{topKOn ? settings.top_k : "off"}</b>
-              </span>
-              <input type="range" min={limits.top_k[0]} max={limits.top_k[1]} step="1" disabled={!topKOn}
-                     value={topKOn ? settings.top_k : defaults.top_k} onChange={set("top_k")} />
-              <small>Only choose among the k most likely characters.</small>
-            </label>
-
-            <label className="field">
-              <span className="row"><span>Max new characters</span><b>{settings.max_new_tokens}</b></span>
-              <input type="range" min={limits.max_new_tokens[0]} max={limits.max_new_tokens[1]} step="10"
-                     value={settings.max_new_tokens} onChange={set("max_new_tokens")} />
-              <small>Longer replies take longer to generate.</small>
-            </label>
-
-            <label className="field">
-              <span className="row"><span>Seed (optional)</span></span>
-              <input type="number" min="0" placeholder="random" value={seed}
-                     onChange={(e) => setSeed(e.target.value)} />
-              <small>The same seed and settings give the same reply.</small>
-            </label>
-
-            <button className="ghost" onClick={() => { setSettings({ ...FALLBACK, ...defaults }); setSeed(""); }}>
-              Reset settings
-            </button>
-          </aside>
-        </div>
-      );
     }
+  }
+  return accumulated.replace("[EOS]", "").trim();
+}
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
+async function handleSend(text) {
+  if (!text || busy) return;
+  busy = true; send.disabled = true; input.value = '';
+  clearTimeout(typingTimer); lastAct = Date.now();
+  
+  history.push({ role: "user", content: text });
+  addMsg(text, 'me');
+  clearTimeout(faceTimer);
+  setFace('thinking');
+  hopAnim(0, .6);
+
+  const botEl = addMsg('', 'bot');
+  const textSpan = botEl.querySelector('.msg-text');
+  startTalk();
+
+  try {
+    const reply = await streamChat(text, textSpan);
+    const clean = (reply || '').replace(/\[EOS\]/g, '').trim();
+    if (!clean) {
+      temp('surprised', 1800, 'neutral', 'huh, nothing came out');
+      textSpan.textContent = '(empty reply: try again or adjust prompt)';
+    } else {
+      textSpan.textContent = clean;
+      history.push({ role: "assistant", content: clean });
+      attachActions(botEl, textSpan);
+      hopAnim(0, .8);
+      temp(moodFor(text), 2800, 'neutral');
+    }
+  } catch (err) {
+    textSpan.textContent = "couldn't reach model (" + err.message + ")";
+    botEl.classList.add('err');
+    temp('cry', 4000, 'neutral');
+  } finally {
+    stopTalk();
+    busy = false; send.disabled = false; input.focus();
+  }
+}
+
+async function regenerateLast() {
+  if (busy || history.length === 0) return;
+  // Find last user message
+  let lastUserIdx = -1;
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].role === "user") {
+      lastUserIdx = i;
+      break;
+    }
+  }
+  if (lastUserIdx === -1) return;
+  const lastUserText = history[lastUserIdx].content;
+
+  // Pop all messages after the last user message
+  history = history.slice(0, lastUserIdx);
+
+  // Remove last bot message from UI
+  const botMsgs = log.querySelectorAll('.msg.bot');
+  if (botMsgs.length > 0) {
+    botMsgs[botMsgs.length - 1].remove();
+  }
+
+  // Remove the last user message from UI as well, so handleSend will re-add and re-stream
+  const userMsgs = log.querySelectorAll('.msg.me');
+  if (userMsgs.length > 0) {
+    userMsgs[userMsgs.length - 1].remove();
+  }
+
+  handleSend(lastUserText);
+}
+
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  handleSend(input.value.trim());
+});
+
+$('clear').addEventListener('click', () => {
+  history = [];
+  log.innerHTML = '<div class="empty" id="empty">fresh start. say something.</div>';
+  poke(); hopAnim(0, 1); temp('wink', 1400);
+});
+
+/* ---------- faces picker (preview every emotion) ---------- */
+const movesBox = $('moods');
+NAMES.forEach(n => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = n;
+  b.addEventListener('click', () => { poke(); hopAnim(0, .7); temp(n, 3200); });
+  movesBox.appendChild(b);
+});
+$('facesBtn').addEventListener('click', () => movesBox.classList.toggle('show'));
+
+/* ---------- onesie colors ---------- */
+const COLORS = ['#ffae5c', '#7fd16b', '#7ec8f0', '#ffa5c8', '#c3a6f0'];
+let colorIdx = 0;
+$('flavorBtn').addEventListener('click', () => {
+  colorIdx = (colorIdx + 1) % COLORS.length;
+  svg.style.setProperty('--dino', COLORS[colorIdx]);
+  poke(); hopAnim(0, .9); temp('giggle', 1300);
+});
+
+/* ---------- hello ---------- */
+setFace('surprised');
+setTimeout(() => { hopAnim(0, 1); temp('happy', 1800, 'neutral', "hi, i'm here"); }, 600);
+</script>
 </body>
 </html>
