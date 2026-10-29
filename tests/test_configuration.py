@@ -1,6 +1,13 @@
 import pytest
 
-from model.configuration import ModelConfig, TrainingConfig, load_model_config, load_training_config
+from model.configuration import (
+    GenerationConfig,
+    ModelConfig,
+    TrainingConfig,
+    load_generation_config,
+    load_model_config,
+    load_training_config,
+)
 
 
 def test_head_dim():
@@ -25,3 +32,15 @@ def test_learning_rate_string_is_converted():
 def test_project_yaml_files_load():
     assert load_model_config().num_heads >= 1
     assert load_training_config().batch_size >= 1
+    assert load_generation_config().max_new_tokens >= 1
+
+
+def test_generation_config_validation():
+    cfg = GenerationConfig(max_new_tokens=100, temperature=0.7)
+    assert cfg.max_new_tokens == 100
+    with pytest.raises(ValueError):
+        GenerationConfig(max_new_tokens=0)
+    with pytest.raises(ValueError):
+        GenerationConfig(temperature=-0.5)
+    with pytest.raises(ValueError):
+        GenerationConfig(repetition_penalty=0.5)

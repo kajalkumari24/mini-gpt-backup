@@ -1,0 +1,8 @@
+# Mini GPT generation settings (read by model/configuration.py)
+generation:
+  max_new_tokens: 200     # maximum new tokens to generate
+  temperature: 0.8        # sampling temperature (0.0 = greedy, higher = more creative)
+  top_k: 40               # top-k filtering (null or 0 to disable)
+  repetition_penalty: 1.1 # penalty applied to previously generated tokens (>= 1.0)
+  seed: 42                # random seed for reproducible sampling (null = random)
+

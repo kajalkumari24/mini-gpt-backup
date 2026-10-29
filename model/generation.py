@@ -66,9 +66,14 @@ def generate(
             new_text += char
             stopped = False
             for s in stop_strings:
-                if s in new_text:
-                    stopped = True
-                    break
+                if isinstance(s, str):
+                    if s in new_text:
+                        stopped = True
+                        break
+                elif hasattr(s, "search"):
+                    if s.search(new_text):
+                        stopped = True
+                        break
             if stopped:
                 break
 

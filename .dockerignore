@@ -1,0 +1,9 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.bak*
+.pytest_cache
+*.zip
+mini_gpt_source_review.zip
+

@@ -12,7 +12,11 @@ def perplexity(loss):
     return math.exp(loss)
 
 
-def bits_per_char(loss):
+def bits_per_char(loss, num_tokens=None, num_chars=None):
+    if num_tokens is not None and num_chars is not None:
+        if num_chars <= 0:
+            raise ValueError("num_chars must be positive")
+        return (loss * num_tokens / math.log(2)) / num_chars
     return loss / math.log(2)
 
 
@@ -47,9 +51,17 @@ def evaluate_full(model, data, batch_size):
 def unigram_baseline(train_data, val_data, vocab_size):
     """Loss of a 'model' that only knows how common each character is (no context).
     A real language model must beat this to prove it uses context."""
-    counts = torch.bincount(train_data.cpu(), minlength=vocab_size).float() + 1.0   # +1 smoothing
+    if len(train_data) == 0:
+        raise ValueError("train_data cannot be empty")
+    if len(val_data) == 0:
+        raise ValueError("val_data cannot be empty")
+    valid_mask = (val_data >= 0) & (val_data < vocab_size)
+    if not valid_mask.any():
+        raise ValueError(f"val_data contains no tokens within vocabulary range [0, {vocab_size - 1}]")
+    val_clean = val_data[valid_mask]
+    counts = torch.bincount(train_data.cpu().clamp(0, vocab_size - 1), minlength=vocab_size).float() + 1.0   # +1 smoothing
     probs = counts / counts.sum()
-    return -torch.log(probs[val_data.cpu()]).mean().item()
+    return -torch.log(probs[val_clean.cpu()]).mean().item()
 
 
 def parameter_megabytes(model):

@@ -1,36 +1,55 @@
-"""Character-level tokenizer: text <-> token IDs, with save and load."""
+"""Tokenizers for Mini-GPT: CharTokenizer and ByteTokenizer.
+
+- CharTokenizer: Character-level tokenizer with optional atomic special tokens ([EOS]).
+- ByteTokenizer: UTF-8 Byte-level tokenizer (256 base vocabulary + special tokens),
+  eliminating out-of-vocabulary character issues for code and symbols.
+"""
 import json
+import re
 from pathlib import Path
+from typing import List, Optional, Union
 
 
 class CharTokenizer:
     """Convert text to character IDs and character IDs back to text."""
 
-    def __init__(self):
+    def __init__(self, special_tokens: Optional[List[str]] = None):
         self.stoi = {}
         self.itos = {}
+        self.special_tokens = list(special_tokens) if special_tokens else []
 
-    def build_vocab(self, text):
-        """Build a vocabulary from the supplied training text."""
+    def build_vocab(self, text: str, special_tokens: Optional[List[str]] = None):
+        """Build a vocabulary from training text, optionally appending special tokens."""
         if not text:
             raise ValueError("Training text cannot be empty.")
 
+        if special_tokens is not None:
+            self.special_tokens = list(special_tokens)
+
+        # Base character set
         characters = sorted(set(text))
         self.stoi = {character: index for index, character in enumerate(characters)}
-        self.itos = {index: character for character, index in self.stoi.items()}
+
+        # Append special tokens if provided
+        for token in self.special_tokens:
+            if token not in self.stoi:
+                new_id = len(self.stoi)
+                self.stoi[token] = new_id
+
+        self.itos = {index: token for token, index in self.stoi.items()}
 
     @classmethod
-    def from_text(cls, text):
-        tokenizer = cls()
-        tokenizer.build_vocab(text)
+    def from_text(cls, text: str, special_tokens: Optional[List[str]] = None):
+        tokenizer = cls(special_tokens=special_tokens)
+        tokenizer.build_vocab(text, special_tokens=special_tokens)
         return tokenizer
 
     @property
-    def vocab_size(self):
+    def vocab_size(self) -> int:
         """Return the number of tokens in the vocabulary."""
         return len(self.stoi)
 
-    def encode(self, text, errors="strict"):
+    def encode(self, text: str, errors: str = "strict") -> List[int]:
         """Convert text into a list of token IDs.
 
         errors="strict" raises on characters the tokenizer has never seen.
@@ -41,15 +60,34 @@ class CharTokenizer:
         if errors not in ("strict", "ignore"):
             raise ValueError("errors must be 'strict' or 'ignore'")
 
-        if errors == "ignore":
-            return [self.stoi[c] for c in text if c in self.stoi]
+        if not self.special_tokens:
+            if errors == "ignore":
+                return [self.stoi[c] for c in text if c in self.stoi]
+            unknown = set(text) - set(self.stoi)
+            if unknown:
+                raise ValueError(f"Text contains unknown characters: {sorted(unknown)!r}")
+            return [self.stoi[character] for character in text]
 
-        unknown = set(text) - set(self.stoi)
-        if unknown:
-            raise ValueError(f"Text contains unknown characters: {sorted(unknown)!r}")
-        return [self.stoi[character] for character in text]
+        # Tokenize with special tokens preserved
+        escaped = [re.escape(t) for t in self.special_tokens]
+        pattern = re.compile(f"({'|'.join(escaped)})")
+        parts = pattern.split(text)
 
-    def decode(self, token_ids):
+        ids = []
+        for part in parts:
+            if not part:
+                continue
+            if part in self.stoi:
+                ids.append(self.stoi[part])
+            else:
+                for c in part:
+                    if c in self.stoi:
+                        ids.append(self.stoi[c])
+                    elif errors == "strict":
+                        raise ValueError(f"Text contains unknown characters: {[c]!r}")
+        return ids
+
+    def decode(self, token_ids: List[int]) -> str:
         """Convert a list of token IDs back into text."""
         if not self.itos:
             raise ValueError("Build the vocabulary before decoding.")
@@ -58,7 +96,7 @@ class CharTokenizer:
         except KeyError as error:
             raise ValueError(f"Unknown token ID: {error.args[0]}") from error
 
-    def save(self, path):
+    def save(self, path: Union[str, Path]):
         """Save the vocabulary as JSON so training and the chatbot share it."""
         if not self.stoi:
             raise ValueError("Build the vocabulary before saving.")
@@ -67,15 +105,97 @@ class CharTokenizer:
         data = {
             "type": "char",
             "chars": [self.itos[i] for i in range(len(self.itos))],
+            "special_tokens": self.special_tokens,
         }
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
     @classmethod
-    def load(cls, path):
+    def load(cls, path: Union[str, Path]):
         data = json.loads(Path(path).read_text(encoding="utf-8"))
         if data.get("type") != "char":
             raise ValueError("Not a character tokenizer file.")
         tokenizer = cls()
         tokenizer.stoi = {c: i for i, c in enumerate(data["chars"])}
         tokenizer.itos = {i: c for c, i in tokenizer.stoi.items()}
+        tokenizer.special_tokens = data.get("special_tokens", [])
         return tokenizer
+
+
+class ByteTokenizer:
+    """Byte-level tokenizer: maps UTF-8 bytes (0-255) to tokens, plus optional special tokens."""
+
+    def __init__(self, special_tokens: Optional[List[str]] = None):
+        self.special_tokens = list(special_tokens) if special_tokens else []
+        self._build_vocab()
+
+    def _build_vocab(self):
+        # 0-255 are standard byte values
+        self.byte_to_id = {b: b for b in range(256)}
+        self.id_to_byte = {b: b for b in range(256)}
+        self.special_to_id = {}
+        self.id_to_special = {}
+
+        for i, token in enumerate(self.special_tokens):
+            tid = 256 + i
+            self.special_to_id[token] = tid
+            self.id_to_special[tid] = token
+
+    @property
+    def vocab_size(self) -> int:
+        return 256 + len(self.special_tokens)
+
+    def encode(self, text: str, errors: str = "strict") -> List[int]:
+        if not self.special_tokens:
+            return list(text.encode("utf-8"))
+
+        escaped = [re.escape(t) for t in self.special_tokens]
+        pattern = re.compile(f"({'|'.join(escaped)})")
+        parts = pattern.split(text)
+
+        ids = []
+        for part in parts:
+            if not part:
+                continue
+            if part in self.special_to_id:
+                ids.append(self.special_to_id[part])
+            else:
+                ids.extend(list(part.encode("utf-8")))
+        return ids
+
+    def decode(self, token_ids: List[int]) -> str:
+        out_bytes = bytearray()
+        out_text = []
+
+        def flush_bytes():
+            if out_bytes:
+                out_text.append(out_bytes.decode("utf-8", errors="replace"))
+                out_bytes.clear()
+
+        for tid in token_ids:
+            tid = int(tid)
+            if tid < 256:
+                out_bytes.append(tid)
+            elif tid in self.id_to_special:
+                flush_bytes()
+                out_text.append(self.id_to_special[tid])
+            else:
+                raise ValueError(f"Unknown token ID: {tid}")
+
+        flush_bytes()
+        return "".join(out_text)
+
+    def save(self, path: Union[str, Path]):
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            "type": "byte",
+            "special_tokens": self.special_tokens,
+        }
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    @classmethod
+    def load(cls, path: Union[str, Path]):
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        if data.get("type") != "byte":
+            raise ValueError("Not a byte tokenizer file.")
+        return cls(special_tokens=data.get("special_tokens", []))

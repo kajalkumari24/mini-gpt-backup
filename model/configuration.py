@@ -67,6 +67,30 @@ class TrainingConfig:
                 raise ValueError(f"{name} must be at least 1")
 
 
+@dataclass
+class GenerationConfig:
+    max_new_tokens: int = 200
+    temperature: float = 0.8
+    top_k: Optional[int] = 40
+    repetition_penalty: float = 1.1
+    seed: Optional[int] = 42
+
+    def __post_init__(self):
+        if self.max_new_tokens < 1:
+            raise ValueError("max_new_tokens must be at least 1")
+        if self.temperature < 0.0:
+            raise ValueError("temperature must be non-negative")
+        if self.top_k is not None and self.top_k < 1:
+            raise ValueError("top_k must be at least 1 or None")
+        if self.repetition_penalty < 1.0:
+            raise ValueError("repetition_penalty must be at least 1.0")
+        if self.seed is not None and self.seed < 0:
+            raise ValueError("seed must be non-negative or None")
+
+    def to_dict(self):
+        return asdict(self)
+
+
 def _read_yaml(relative_path):
     path = PROJECT_ROOT / relative_path
     if not path.exists():
@@ -87,6 +111,13 @@ def load_training_config(path="configs/training.yaml"):
     if data is None:
         raise ValueError(f"{path} must contain a top-level 'training:' section")
     return TrainingConfig(**data)
+
+
+def load_generation_config(path="configs/generation.yaml"):
+    data = _read_yaml(path).get("generation")
+    if data is None:
+        raise ValueError(f"{path} must contain a top-level 'generation:' section")
+    return GenerationConfig(**data)
 
 
 def get_device(preference="auto"):

@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mini-gpt"
+version = "0.1.0"
+description = "A lightweight generative pre-trained transformer (Mini-GPT) implementation"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "torch",
+    "fastapi",
+    "uvicorn",
+    "pyyaml",
+    "pydantic",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+

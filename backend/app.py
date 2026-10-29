@@ -18,7 +18,18 @@ from pydantic import BaseModel, Field, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-DEFAULTS = {"max_new_tokens": 200, "temperature": 0.8, "top_k": 40, "repetition_penalty": 1.1}
+try:
+    from model.configuration import load_generation_config
+    _gen_cfg = load_generation_config()
+    DEFAULTS = {
+        "max_new_tokens": _gen_cfg.max_new_tokens,
+        "temperature": _gen_cfg.temperature,
+        "top_k": _gen_cfg.top_k,
+        "repetition_penalty": _gen_cfg.repetition_penalty,
+    }
+except Exception:
+    DEFAULTS = {"max_new_tokens": 200, "temperature": 0.8, "top_k": 40, "repetition_penalty": 1.1}
+
 LIMITS = {"max_new_tokens": [1, 500], "temperature": [0.0, 2.0], "repetition_penalty": [1.0, 2.0]}
 
 AVAILABLE_MODELS = {
@@ -81,6 +92,25 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
     }
     load_lock = threading.Lock()
 
+    MAX_CONCURRENT_GENERATIONS = 10
+    active_generations = 0
+    gen_lock = threading.Lock()
+
+    def acquire_generation_slot():
+        nonlocal active_generations
+        with gen_lock:
+            if active_generations >= MAX_CONCURRENT_GENERATIONS:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Too many concurrent generation requests. Please try again shortly.",
+                )
+            active_generations += 1
+
+    def release_generation_slot():
+        nonlocal active_generations
+        with gen_lock:
+            active_generations = max(0, active_generations - 1)
+
     def get_service(model_id=None):
         if state["injected_service"] is not None:
             return state["injected_service"]
@@ -98,7 +128,12 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
                     if not Path(ckpt).is_file():
                         raise HTTPException(
                             status_code=503,
-                            detail=f"No trained model found at {ckpt}. Train it first (Step 6).",
+                            detail=f"No trained model found at {ckpt}. Train it first using scripts/train.py.",
+                        )
+                    if not Path(tok).is_file():
+                        raise HTTPException(
+                            status_code=503,
+                            detail=f"Tokenizer file not found at {tok}. Run scripts/train.py to generate tokenizer.json.",
                         )
                     from backend.service import ModelService
                     state["services"][target_id] = ModelService.from_checkpoint(ckpt, tok)
@@ -131,6 +166,7 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
     )
 
     @app.get("/api/health")
+    @app.get("/health")
     def health():
         is_loaded = state["injected_service"] is not None or len(state["services"]) > 0
         return {"status": "ok", "model_loaded": is_loaded}
@@ -176,19 +212,30 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
 
     @app.post("/api/generate")
     def generate_text(request: GenerateRequest):
-        return get_service().complete(
-            request.prompt, request.max_new_tokens, request.temperature, request.top_k, request.seed
-        )
+        acquire_generation_slot()
+        try:
+            return get_service().complete(
+                request.prompt, request.max_new_tokens, request.temperature, request.top_k, request.seed
+            )
+        finally:
+            release_generation_slot()
 
     @app.post("/api/chat")
     def chat(request: ChatRequest):
-        messages = [m.model_dump() for m in request.messages]
-        return get_service().chat(
-            messages, request.max_new_tokens, request.temperature, request.top_k, request.seed
-        )
+        acquire_generation_slot()
+        try:
+            messages = [m.model_dump() for m in request.messages]
+            return get_service().chat(
+                messages, request.max_new_tokens, request.temperature, request.top_k, request.seed
+            )
+        finally:
+            release_generation_slot()
 
     @app.post("/api/chat/stream")
+    @app.post("/api/stream_chat")
+    @app.post("/stream_chat")
     def chat_stream(request: ChatRequest):
+        acquire_generation_slot()
         svc = get_service()
         messages = [m.model_dump() for m in request.messages]
 
@@ -212,6 +259,8 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
                 yield "data: [DONE]\n\n"
             except Exception as e:
                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            finally:
+                release_generation_slot()
 
         return StreamingResponse(
             event_stream(),
@@ -221,16 +270,28 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
 
     @app.post("/chat")
     def chat_compat(request: dict):
-        text = request.get("message") or request.get("prompt") or request.get("text") or ""
-        messages = request.get("messages")
-        if not messages and text:
-            messages = [{"role": "user", "content": text}]
-        if not messages:
-            raise HTTPException(status_code=422, detail="No message or messages provided")
-        return get_service().chat(messages, 200, 0.8, 40, None)
+        acquire_generation_slot()
+        try:
+            text = request.get("message") or request.get("prompt") or request.get("text") or ""
+            messages = request.get("messages")
+            if not messages and text:
+                messages = [{"role": "user", "content": text}]
+            if not messages:
+                raise HTTPException(status_code=422, detail="No message or messages provided")
+            return get_service().chat(messages, 200, 0.8, 40, None)
+        finally:
+            release_generation_slot()
 
     # The chat page. Mounted last so the /api routes above take priority.
     if (frontend_dir / "index.html").is_file():
         app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+    else:
+        @app.get("/")
+        def root_message():
+            return {"status": "ok", "message": "Mini GPT API is running.", "ui": "No frontend index.html found"}
 
     return app
+
+
+# Default app instance for standard ASGI runners (e.g. uvicorn backend.app:app)
+app = create_app()

@@ -45,6 +45,11 @@ coverage.xml
 
 # Backups and temporary files
 *.bak
+*.bak*
 *.tmp
 *.orig
 *~
+
+# Archives
+*.zip
+*.tar.gz

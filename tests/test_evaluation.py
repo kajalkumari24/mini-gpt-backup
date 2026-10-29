@@ -59,6 +59,21 @@ def test_unigram_baseline():
     zeros = torch.zeros(1000, dtype=torch.long)
     assert unigram_baseline(zeros, zeros, 8) < 0.1
 
+    # Empty data rejected
+    with pytest.raises(ValueError):
+        unigram_baseline(torch.tensor([], dtype=torch.long), even, 8)
+
+    # Out of vocabulary token in eval handled safely
+    oov_eval = torch.tensor([0, 1, 999], dtype=torch.long)
+    assert unigram_baseline(even, oov_eval, 8) > 0
+
+
+def test_bits_per_char_normalized():
+    # 100 tokens, 200 chars -> BPC is halved relative to bits_per_token
+    loss = math.log(8)  # 3.0 bits per token
+    bpc = bits_per_char(loss, num_tokens=100, num_chars=200)
+    assert bpc == pytest.approx(1.5)
+
 
 def test_parameter_megabytes():
     model = make_model()

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  mini-gpt:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./checkpoints:/app/checkpoints
+      - ./data:/app/data
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+
