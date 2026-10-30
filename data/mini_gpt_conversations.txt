@@ -735,3 +735,244 @@ Can you guarantee every answer is correct?
 
 BOT:
 No. I cannot guarantee that every generated answer is correct. Important information should be checked against trusted sources or tests.[EOS]
+
+YOU:
+What is the capital of France?
+
+BOT:
+The capital of France is Paris.[EOS]
+
+YOU:
+What is the capital of Japan?
+
+BOT:
+The capital of Japan is Tokyo.[EOS]
+
+YOU:
+What is the capital of Germany?
+
+BOT:
+The capital of Germany is Berlin.[EOS]
+
+YOU:
+What is the capital of Australia?
+
+BOT:
+The capital of Australia is Canberra.[EOS]
+
+YOU:
+What is the capital of Canada?
+
+BOT:
+The capital of Canada is Ottawa.[EOS]
+
+YOU:
+What is the capital of Brazil?
+
+BOT:
+The capital of Brazil is Brasilia.[EOS]
+
+YOU:
+What is the largest ocean on Earth?
+
+BOT:
+The Pacific Ocean is the largest and deepest ocean on Earth.[EOS]
+
+YOU:
+What is the speed of light in vacuum?
+
+BOT:
+The speed of light in a vacuum is approximately 299,792 kilometers per second (about 186,282 miles per second).[EOS]
+
+YOU:
+What is photosynthesis?
+
+BOT:
+Photosynthesis is the process by which green plants and certain organisms use sunlight, water, and carbon dioxide to create oxygen and energy in the form of sugar.[EOS]
+
+YOU:
+What is the boiling point of water at sea level?
+
+BOT:
+Water boils at 100 degrees Celsius (212 degrees Fahrenheit) at standard atmospheric sea-level pressure.[EOS]
+
+YOU:
+How many planets are in our solar system?
+
+BOT:
+There are eight planets in our solar system: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune.[EOS]
+
+YOU:
+What is the difference between RAM and hard drive storage?
+
+BOT:
+RAM is fast, volatile memory used by the CPU to store data actively in use. Hard drive or SSD storage is slower, non-volatile memory used for permanent file and program storage.[EOS]
+
+YOU:
+What is a CPU?
+
+BOT:
+A Central Processing Unit (CPU) is the primary component of a computer that executes instructions and performs arithmetic, logic, and control operations.[EOS]
+
+YOU:
+What is a GPU and how does it differ from a CPU?
+
+BOT:
+A GPU (Graphics Processing Unit) is designed with thousands of smaller cores to perform parallel processing efficiently, making it ideal for graphics rendering, matrix calculations, and machine learning training.[EOS]
+
+YOU:
+What is an API?
+
+BOT:
+An API (Application Programming Interface) is a set of rules, protocols, and tools that allows different software applications to communicate and exchange data with each other.[EOS]
+
+YOU:
+What is the difference between HTTP and HTTPS?
+
+BOT:
+HTTPS encrypts the communication session using TLS/SSL to protect data integrity and privacy, whereas standard HTTP sends data in unencrypted plaintext.[EOS]
+
+YOU:
+What is Python?
+
+BOT:
+Python is a high-level, interpreted programming language known for its clear, readable syntax and versatile ecosystem for web development, data science, automation, and AI.[EOS]
+
+YOU:
+How do I write a function in Python?
+
+BOT:
+You define a function in Python using the 'def' keyword:
+
+def greet(name):
+    return f'Hello, {name}!'[EOS]
+
+YOU:
+How do I reverse a string in Python?
+
+BOT:
+You can reverse a string using slice notation: reversed_text = text[::-1].[EOS]
+
+YOU:
+How do I check if a number is even in Python?
+
+BOT:
+Use the modulo operator: is_even = (number % 2 == 0).[EOS]
+
+YOU:
+How do I calculate factorial in Python?
+
+BOT:
+Here is a simple recursive function:
+
+def factorial(n):
+    if n <= 1:
+        return 1
+    return n * factorial(n - 1)[EOS]
+
+YOU:
+How do I read a text file in Python safely?
+
+BOT:
+Use a 'with' statement so the file is closed automatically:
+
+with open('filename.txt', 'r', encoding='utf-8') as f:
+    content = f.read()[EOS]
+
+YOU:
+What is a list comprehension in Python?
+
+BOT:
+A list comprehension is a concise way to create lists. For example: squares = [x * x for x in range(10)].[EOS]
+
+YOU:
+What is the difference between a list and a tuple in Python?
+
+BOT:
+A list is mutable, meaning its items can be added, removed, or changed. A tuple is immutable, meaning its elements cannot be modified after creation.[EOS]
+
+YOU:
+What is a dictionary in Python?
+
+BOT:
+A dictionary is an unordered, mutable collection of key-value pairs where each key must be unique and hashable: person = {'name': 'Alice', 'age': 30}.[EOS]
+
+YOU:
+How do I handle exceptions in Python?
+
+BOT:
+Use a try-except block:
+
+try:
+    result = 10 / divisor
+except ZeroDivisionError:
+    print('Cannot divide by zero')[EOS]
+
+YOU:
+What is binary search?
+
+BOT:
+Binary search is an efficient search algorithm that finds the position of a target value within a sorted array by repeatedly dividing the search interval in half.[EOS]
+
+YOU:
+What is time complexity O(1)?
+
+BOT:
+O(1), or constant time complexity, means the execution time of an operation remains the same regardless of the size of the input data.[EOS]
+
+YOU:
+What is time complexity O(n)?
+
+BOT:
+O(n), or linear time complexity, means the execution time grows directly proportional to the size of the input.[EOS]
+
+YOU:
+How do I count elements in a list in Python?
+
+BOT:
+You can find the total length using len(my_list), or count occurrences of a specific item using my_list.count(item).[EOS]
+
+YOU:
+What causes an IndexError in Python?
+
+BOT:
+An IndexError occurs when you attempt to access an index that is outside the range of a sequence, such as accessing index 5 in a list with only 3 elements.[EOS]
+
+YOU:
+What causes a KeyError in Python?
+
+BOT:
+A KeyError occurs when you try to access a dictionary key that does not exist in that dictionary.[EOS]
+
+YOU:
+Can you help me write a function to find the maximum value in a list?
+
+BOT:
+Certainly! Here is how you can write it:
+
+def find_max(numbers):
+    if not numbers:
+        return None
+    max_val = numbers[0]
+    for num in numbers[1:]:
+        if num > max_val:
+            max_val = num
+    return max_val[EOS]
+
+YOU:
+What is the difference between == and 'is' in Python?
+
+BOT:
+The '==' operator checks for equality of value, while the 'is' operator checks for identity, meaning whether both variables refer to the exact same object in memory.[EOS]
+
+YOU:
+How do I merge two dictionaries in Python?
+
+BOT:
+In Python 3.9 and newer, you can use the union operator: merged = dict1 | dict2. You can also use {**dict1, **dict2}.[EOS]
+
+YOU:
+What is recursion?
+
+BOT:
+Recursion is a programming technique where a function calls itself to solve a smaller instance of the same problem, stopping when it reaches a base case.[EOS]

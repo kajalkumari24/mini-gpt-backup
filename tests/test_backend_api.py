@@ -125,3 +125,16 @@ def test_cors_allows_the_local_dev_server_only(client):
     assert ok.headers.get("access-control-allow-origin") == "http://localhost:5173"
     other = client.get("/api/health", headers={"Origin": "http://evil.example"})
     assert "access-control-allow-origin" not in other.headers
+
+
+def test_atomic_model_switching_preserves_active_model_on_failure(client):
+    info_before = client.get("/api/info").json()
+    active_before = info_before["active_model"]
+
+    # Attempt to switch to an invalid model
+    res_bad = client.post("/api/models/select", json={"model": "non_existent"})
+    assert res_bad.status_code == 400
+
+    # Ensure active model remains completely unchanged
+    info_after = client.get("/api/info").json()
+    assert info_after["active_model"] == active_before

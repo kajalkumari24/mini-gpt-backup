@@ -68,5 +68,7 @@ class GPT(nn.Module):
                     f"targets shape {tuple(targets.shape)} must match "
                     f"token_ids shape {tuple(token_ids.shape)}"
                 )
-            loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), targets.reshape(-1))
+            loss = F.cross_entropy(
+                logits.reshape(-1, logits.size(-1)), targets.reshape(-1), ignore_index=-100
+            )
         return logits, loss

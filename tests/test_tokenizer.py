@@ -111,3 +111,43 @@ def test_legacy_checkpoint_tokenizer_compatibility():
         out_v3 = generate(model_v3, torch.tensor([[0, 1]]), max_new_tokens=5, temperature=0.0)
         assert out_v3.shape == (1, 7)
         assert out_v3.max().item() < 65
+
+
+def test_tokenizer_config_and_vocab_hash():
+    tok = CharTokenizer.from_text("abcdef", special_tokens=["[EOS]"])
+    cfg = tok.get_config()
+    assert cfg["type"] == "char"
+    assert cfg["vocab_size"] == 7
+    assert cfg["special_tokens"] == ["[EOS]"]
+    assert len(cfg["vocab_hash"]) == 16
+
+    byte_tok = ByteTokenizer(special_tokens=["[EOS]"])
+    b_cfg = byte_tok.get_config()
+    assert b_cfg["type"] == "byte"
+    assert b_cfg["vocab_size"] == 257
+    assert len(b_cfg["vocab_hash"]) == 16
+
+
+def test_verify_compatibility_mismatches():
+    from model.configuration import ModelConfig
+    from model.tokenizer import verify_compatibility
+
+    tok = CharTokenizer.from_text("abcdef")
+    m_cfg = ModelConfig(vocab_size=6, context_length=16, embedding_dim=16, num_heads=2, num_layers=1, dropout=0.0)
+
+    # Matching passes
+    verify_compatibility(tok, m_cfg, tok.get_config())
+
+    # Mismatched vocab size
+    m_cfg_bad = ModelConfig(vocab_size=65, context_length=16, embedding_dim=16, num_heads=2, num_layers=1, dropout=0.0)
+    with pytest.raises(ValueError, match="Vocabulary size mismatch"):
+        verify_compatibility(tok, m_cfg_bad)
+
+    # Mismatched type
+    byte_tok = ByteTokenizer()
+    with pytest.raises(ValueError, match="Tokenizer type mismatch"):
+        verify_compatibility(byte_tok, m_cfg, {"type": "char", "vocab_hash": "dummy"})
+
+    # Mismatched vocab hash
+    with pytest.raises(ValueError, match="Tokenizer vocabulary mapping mismatch"):
+        verify_compatibility(tok, m_cfg, {"type": "char", "vocab_hash": "different_hash123"})

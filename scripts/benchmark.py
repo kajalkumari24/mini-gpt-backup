@@ -61,7 +61,49 @@ def parse_args():
         default=3,
         help="Number of timed runs (default: 3).",
     )
+    parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=1,
+        help="Number of simulated concurrent clients (default: 1).",
+    )
     return parser.parse_args()
+
+
+def benchmark_concurrent_clients(model, device, num_tokens=50, concurrency=4):
+    """Benchmark model generation under concurrent thread load."""
+    import concurrent.futures
+    import time
+    import torch
+    from model.generation import generate
+
+    prompt_tokens = torch.tensor([[0]], dtype=torch.long, device=device)
+    model.eval()
+
+    def single_worker():
+        t0 = time.time()
+        with torch.no_grad():
+            out = generate(model, prompt_tokens, max_new_tokens=num_tokens, temperature=0.8, top_k=40)
+        t1 = time.time()
+        return t1 - t0, out.size(1) - 1
+
+    start_all = time.time()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
+        futures = [executor.submit(single_worker) for _ in range(concurrency)]
+        results = [f.result() for f in futures]
+    total_wall_time = time.time() - start_all
+
+    total_tokens = sum(r[1] for r in results)
+    avg_latency = sum(r[0] for r in results) / len(results)
+    aggregate_tokens_per_sec = total_tokens / max(1e-6, total_wall_time)
+
+    return {
+        "concurrency": concurrency,
+        "total_wall_time": total_wall_time,
+        "avg_client_latency": avg_latency,
+        "total_tokens": total_tokens,
+        "aggregate_tokens_per_second": aggregate_tokens_per_sec,
+    }
 
 
 def main():
@@ -105,6 +147,19 @@ def main():
     if "gpu_peak_mb" in perf:
         print(f"Peak GPU Memory:    {perf['gpu_peak_mb']:.2f} MB")
     print("=" * 60)
+
+    if args.concurrency > 1:
+        print(f"\nRunning Concurrency Benchmark ({args.concurrency} parallel clients)...")
+        c_perf = benchmark_concurrent_clients(
+            model, device, num_tokens=args.num_tokens, concurrency=args.concurrency
+        )
+        print("-" * 60)
+        print(f"Concurrency level:           {c_perf['concurrency']} clients")
+        print(f"Total tokens generated:      {c_perf['total_tokens']}")
+        print(f"Aggregate throughput:        {c_perf['aggregate_tokens_per_second']:.2f} tokens/second")
+        print(f"Average client latency:      {c_perf['avg_client_latency']:.4f} s")
+        print(f"Total wall time:             {c_perf['total_wall_time']:.4f} s")
+        print("=" * 60)
 
 
 if __name__ == "__main__":

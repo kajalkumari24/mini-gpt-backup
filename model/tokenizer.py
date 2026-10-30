@@ -4,19 +4,75 @@
 - ByteTokenizer: UTF-8 Byte-level tokenizer (256 base vocabulary + special tokens),
   eliminating out-of-vocabulary character issues for code and symbols.
 """
+import hashlib
 import json
 import re
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
+
+
+def verify_compatibility(tokenizer: Any, model_config: Any, checkpoint_tokenizer_info: Optional[Dict[str, Any]] = None):
+    """Verify that a tokenizer is 100% compatible with a model configuration and checkpoint metadata.
+
+    Raises ValueError with a detailed explanation if incompatible.
+    """
+    if checkpoint_tokenizer_info:
+        expected_type = checkpoint_tokenizer_info.get("type")
+        current_type = getattr(tokenizer, "tokenizer_type", "char" if isinstance(tokenizer, CharTokenizer) else "byte")
+        if expected_type and expected_type != current_type:
+            raise ValueError(
+                f"Tokenizer type mismatch: Checkpoint expects '{expected_type}' tokenizer, "
+                f"but received '{current_type}' tokenizer."
+            )
+
+    tok_vocab = getattr(tokenizer, "vocab_size", None)
+    model_vocab = getattr(model_config, "vocab_size", None)
+
+    if tok_vocab is None:
+        raise ValueError("Provided tokenizer does not have a valid vocab_size attribute.")
+    if model_vocab is not None and tok_vocab != model_vocab:
+        raise ValueError(
+            f"Vocabulary size mismatch: Tokenizer has {tok_vocab} tokens, but model requires {model_vocab}. "
+            f"The tokenizer and model checkpoint must originate from the same training run."
+        )
+
+    if checkpoint_tokenizer_info:
+        expected_hash = checkpoint_tokenizer_info.get("vocab_hash")
+        if expected_hash and hasattr(tokenizer, "vocab_hash"):
+            current_hash = tokenizer.vocab_hash
+            if current_hash != expected_hash:
+                raise ValueError(
+                    f"Tokenizer vocabulary mapping mismatch: Checkpoint expected vocab hash {expected_hash}, "
+                    f"but tokenizer has vocab hash {current_hash}. Character or byte IDs do not align."
+                )
 
 
 class CharTokenizer:
     """Convert text to character IDs and character IDs back to text."""
 
+    tokenizer_type = "char"
+
     def __init__(self, special_tokens: Optional[List[str]] = None):
         self.stoi = {}
         self.itos = {}
         self.special_tokens = list(special_tokens) if special_tokens else []
+
+    @property
+    def vocab_hash(self) -> str:
+        """Deterministic hash of the vocabulary mapping for checkpoint compatibility verification."""
+        if not self.stoi:
+            return ""
+        content = "".join(f"{k}:{v};" for k, v in sorted(self.stoi.items()))
+        return hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
+
+    def get_config(self) -> Dict[str, Any]:
+        """Return tokenizer configuration metadata for checkpoint serialization."""
+        return {
+            "type": "char",
+            "vocab_size": self.vocab_size,
+            "special_tokens": list(self.special_tokens),
+            "vocab_hash": self.vocab_hash,
+        }
 
     def build_vocab(self, text: str, special_tokens: Optional[List[str]] = None):
         """Build a vocabulary from training text, optionally appending special tokens."""
@@ -124,9 +180,26 @@ class CharTokenizer:
 class ByteTokenizer:
     """Byte-level tokenizer: maps UTF-8 bytes (0-255) to tokens, plus optional special tokens."""
 
+    tokenizer_type = "byte"
+
     def __init__(self, special_tokens: Optional[List[str]] = None):
         self.special_tokens = list(special_tokens) if special_tokens else []
         self._build_vocab()
+
+    @property
+    def vocab_hash(self) -> str:
+        """Deterministic hash of the special tokens added to the standard 256 byte vocabulary."""
+        content = "byte256:" + ";".join(self.special_tokens)
+        return hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
+
+    def get_config(self) -> Dict[str, Any]:
+        """Return tokenizer configuration metadata for checkpoint serialization."""
+        return {
+            "type": "byte",
+            "vocab_size": self.vocab_size,
+            "special_tokens": list(self.special_tokens),
+            "vocab_hash": self.vocab_hash,
+        }
 
     def _build_vocab(self):
         # 0-255 are standard byte values

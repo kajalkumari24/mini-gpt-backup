@@ -119,15 +119,24 @@ def main():
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     tokenizer.save(checkpoint_dir / "tokenizer.json")
 
-    token_ids = tokenizer.encode(text)
-    train_data, val_data = split_data(token_ids, train_cfg.train_split)
+    import torch
+    if "YOU:" in text:
+        from training.data import split_conversations
+        train_text, val_text = split_conversations(text, train_cfg.train_split)
+        train_data = torch.tensor(tokenizer.encode(train_text), dtype=torch.long)
+        val_data = torch.tensor(tokenizer.encode(val_text), dtype=torch.long)
+    else:
+        token_ids = tokenizer.encode(text)
+        train_data, val_data = split_data(token_ids, train_cfg.train_split)
     print(f"Split into {len(train_data):,} training and {len(val_data):,} validation tokens")
 
     model = GPT(model_cfg)
     print(f"Model parameters: {model.num_parameters():,}")
     print(f"Training on device: {device}")
 
-    trainer = Trainer(model, train_data, val_data, train_cfg, model_cfg, device, checkpoint_dir)
+    trainer = Trainer(
+        model, train_data, val_data, train_cfg, model_cfg, device, checkpoint_dir, tokenizer=tokenizer
+    )
     trainer.train(max_steps=train_cfg.max_steps, resume_from=args.resume)
     print("Training finished successfully.")
 

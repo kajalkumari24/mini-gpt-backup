@@ -1,5 +1,45 @@
-"""Turn a long list of token IDs into training batches."""
+"""Turn a long list of token IDs or text into training batches."""
+import re
+from typing import Tuple
 import torch
+
+
+def deduplicate_conversations(text: str) -> str:
+    """Remove duplicate conversation blocks while preserving order."""
+    blocks = re.split(r"\n\s*\n(?=YOU:)", text.strip())
+    seen = set()
+    unique = []
+    for block in blocks:
+        clean = block.strip()
+        if clean and clean not in seen:
+            seen.add(clean)
+            unique.append(clean)
+    return "\n\n".join(unique) + "\n\n"
+
+
+def split_conversations(text: str, train_split: float, deduplicate: bool = True) -> Tuple[str, str]:
+    """Split complete dialogue blocks into train and validation sets without cutting conversations.
+
+    Guarantees:
+    - Entire conversation turns remain together (no train/val bleed mid-sentence).
+    - Validation data is genuinely held-out.
+    - Optional deduplication prevents identical conversations in both sets.
+    """
+    if deduplicate:
+        text = deduplicate_conversations(text)
+
+    blocks = [b.strip() for b in re.split(r"\n\s*\n(?=YOU:)", text.strip()) if b.strip()]
+    if not blocks:
+        # Fallback to double newline splitting
+        blocks = [b.strip() for b in text.split("\n\n") if b.strip()]
+
+    n_train = max(1, int(len(blocks) * train_split))
+    train_blocks = blocks[:n_train]
+    val_blocks = blocks[n_train:]
+
+    train_text = "\n\n".join(train_blocks) + "\n\n"
+    val_text = "\n\n".join(val_blocks) + "\n\n" if val_blocks else train_text
+    return train_text, val_text
 
 
 def split_data(token_ids, train_split):

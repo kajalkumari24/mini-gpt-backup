@@ -101,3 +101,56 @@ def test_training_can_resume(tmp_path):
     second = Trainer(GPT(cfg), train, val, tcfg, cfg, torch.device("cpu"), tmp_path)
     history = second.train(max_steps=100, resume_from=tmp_path / "last.pt", log=lambda *_: None)
     assert [h["step"] for h in history] == [0, 25, 50, 75, 100]
+
+
+def test_checkpoint_saves_and_verifies_tokenizer(tmp_path):
+    from model.tokenizer import CharTokenizer, ByteTokenizer
+    cfg = small_model_config()
+    model = GPT(cfg).eval()
+    optimizer = torch.optim.AdamW(model.parameters())
+    tok = CharTokenizer.from_text("abcdefgh")
+
+    ckpt_path = tmp_path / "saved_tok.pt"
+    save_checkpoint(ckpt_path, model, optimizer, 10, 1.2, cfg, small_train_config(), [], tokenizer=tok)
+
+    # Valid load with matching tokenizer succeeds
+    loaded_model, ckpt = load_model_from_checkpoint(ckpt_path, device="cpu", tokenizer=tok)
+    assert ckpt["tokenizer_config"]["vocab_size"] == 8
+    assert ckpt["tokenizer_config"]["type"] == "char"
+
+    # Incompatible tokenizer type (ByteTokenizer vs Char) is rejected
+    byte_tok = ByteTokenizer()
+    with pytest.raises(ValueError):
+        load_model_from_checkpoint(ckpt_path, device="cpu", tokenizer=byte_tok)
+
+
+def test_split_conversations_and_deduplication():
+    from training.data import split_conversations, deduplicate_conversations
+
+    raw = (
+        "YOU:\nHi\n\nBOT:\nHello![EOS]\n\n"
+        "YOU:\nHi\n\nBOT:\nHello![EOS]\n\n"
+        "YOU:\nWhat is 2+2?\n\nBOT:\nIt is 4.[EOS]\n\n"
+        "YOU:\nWhat is code?\n\nBOT:\nInstructions for computers.[EOS]\n\n"
+    )
+    deduped = deduplicate_conversations(raw)
+    assert deduped.count("YOU:\nHi") == 1
+
+    train_text, val_text = split_conversations(raw, train_split=0.66)
+    assert "YOU:\nHi" in train_text
+    assert "YOU:\nWhat is code?" in val_text
+    # Verify complete conversation preservation (never sliced in the middle)
+    assert train_text.endswith("[EOS]\n\n")
+    assert val_text.endswith("[EOS]\n\n")
+
+
+def test_loss_masking_with_ignore_index():
+    cfg = small_model_config()
+    model = GPT(cfg)
+    inputs = torch.tensor([[0, 1, 2, 3]], dtype=torch.long)
+    targets = torch.tensor([[-100, -100, 2, 3]], dtype=torch.long)
+
+    logits, loss = model(inputs, targets)
+    assert loss is not None
+    assert torch.isfinite(loss)
+    assert loss.item() > 0

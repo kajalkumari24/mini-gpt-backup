@@ -40,7 +40,18 @@ def estimate_loss(model, data, batch_size, context_length, eval_iters):
 
 
 class Trainer:
-    def __init__(self, model, train_data, val_data, train_cfg, model_cfg, device, checkpoint_dir):
+    def __init__(
+        self, model, train_data, val_data, train_cfg, model_cfg, device, checkpoint_dir, tokenizer=None
+    ):
+        if len(train_data) <= model_cfg.context_length:
+            raise ValueError(
+                f"train_data has {len(train_data)} tokens, which is <= context_length {model_cfg.context_length}."
+            )
+        if len(val_data) <= model_cfg.context_length:
+            raise ValueError(
+                f"val_data has {len(val_data)} tokens, which is <= context_length {model_cfg.context_length}."
+            )
+
         self.model = model.to(device)
         self.train_data = train_data.to(device)
         self.val_data = val_data.to(device)
@@ -48,6 +59,7 @@ class Trainer:
         self.model_cfg = model_cfg
         self.device = device
         self.checkpoint_dir = Path(checkpoint_dir)
+        self.tokenizer = tokenizer
         self.best_val_loss = float("inf")
         self.history = []
 
@@ -64,8 +76,15 @@ class Trainer:
 
     def _save(self, name, step, best_val, history):
         save_checkpoint(
-            self.checkpoint_dir / name, self.model, self.optimizer,
-            step, best_val, self.model_cfg, self.train_cfg, history,
+            self.checkpoint_dir / name,
+            self.model,
+            self.optimizer,
+            step,
+            best_val,
+            self.model_cfg,
+            self.train_cfg,
+            history,
+            tokenizer=self.tokenizer,
         )
 
     def train(self, max_steps=None, resume_from=None, log=print):

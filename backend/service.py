@@ -1,4 +1,6 @@
 """The model service: loads the trained GPT once and answers generation requests."""
+import json
+from pathlib import Path
 import threading
 from typing import Dict, List, Optional, Any
 
@@ -6,7 +8,7 @@ import torch
 
 from model.configuration import get_device
 from model.generation import generate, generate_stream
-from model.tokenizer import CharTokenizer
+from model.tokenizer import ByteTokenizer, CharTokenizer, verify_compatibility
 from training.checkpoint import load_model_from_checkpoint
 
 from .prompt import (
@@ -20,25 +22,31 @@ from .prompt import (
 
 class ModelService:
     def __init__(self, model, tokenizer, device, checkpoint_info=None):
-        if tokenizer.vocab_size != model.config.vocab_size:
-            raise ValueError(
-                f"Tokenizer has {tokenizer.vocab_size} characters but the model expects "
-                f"{model.config.vocab_size}. They must come from the same training run."
-            )
+        checkpoint_info = checkpoint_info or {}
+        verify_compatibility(tokenizer, model.config, checkpoint_info.get("tokenizer_config"))
+
         self.model = model.eval()
         self.tokenizer = tokenizer
         self.device = device
-        self.checkpoint_info = checkpoint_info or {}
+        self.checkpoint_info = checkpoint_info
         self._lock = threading.Lock()      # one generation at a time on the shared model
 
     @classmethod
     def from_checkpoint(cls, checkpoint_path, tokenizer_path, device="auto"):
         device = get_device(device)
-        tokenizer = CharTokenizer.load(tokenizer_path)
-        model, checkpoint = load_model_from_checkpoint(checkpoint_path, device)
+        tok_path = Path(tokenizer_path)
+        tok_data = json.loads(tok_path.read_text(encoding="utf-8"))
+        if tok_data.get("type") == "byte":
+            tokenizer = ByteTokenizer.load(tok_path)
+        else:
+            tokenizer = CharTokenizer.load(tok_path)
+
+        model, checkpoint = load_model_from_checkpoint(checkpoint_path, device, tokenizer=tokenizer)
         info = {
-            "checkpoint_step": checkpoint["step"],
-            "best_val_loss": checkpoint["best_val_loss"],
+            "checkpoint_step": checkpoint.get("step"),
+            "best_val_loss": checkpoint.get("best_val_loss"),
+            "tokenizer_config": checkpoint.get("tokenizer_config"),
+            "tokenizer_type": getattr(tokenizer, "tokenizer_type", "char"),
         }
         return cls(model, tokenizer, device, info)
 

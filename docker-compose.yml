@@ -3,6 +3,7 @@ version: '3.8'
 services:
   mini-gpt:
     build: .
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
@@ -11,4 +12,7 @@ services:
     environment:
       - PORT=8000
       - HOST=0.0.0.0
+      - MAX_CONCURRENT_GENERATIONS=4
+      - RATE_LIMIT_PER_MINUTE=120
+      - MINI_GPT_API_KEY=${MINI_GPT_API_KEY:-}
 

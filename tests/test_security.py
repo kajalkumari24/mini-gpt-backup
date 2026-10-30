@@ -110,3 +110,69 @@ def test_concurrent_generation_slot_exhaustion(tmp_path):
 
     assert 429 in statuses or all(s == 200 for s in statuses)
 
+
+def test_api_key_authentication(tmp_path):
+    app = create_app(service=DummyService(), frontend_dir=tmp_path, api_key="secret-token-123")
+    client = TestClient(app)
+
+    # Missing API key returns 401
+    res1 = client.post("/api/generate", json={"prompt": "hello"})
+    assert res1.status_code == 401
+    assert "Unauthorized" in res1.text
+
+    # Wrong API key returns 401
+    res2 = client.post(
+        "/api/generate", json={"prompt": "hello"}, headers={"Authorization": "Bearer wrong-token"}
+    )
+    assert res2.status_code == 401
+
+    # Valid Bearer token returns 200
+    res3 = client.post(
+        "/api/generate", json={"prompt": "hello"}, headers={"Authorization": "Bearer secret-token-123"}
+    )
+    assert res3.status_code == 200
+
+    # Valid X-API-Key header returns 200
+    res4 = client.post(
+        "/api/generate", json={"prompt": "hello"}, headers={"X-API-Key": "secret-token-123"}
+    )
+    assert res4.status_code == 200
+
+
+def test_rate_limiting_per_ip(tmp_path):
+    # App configured with max 3 requests per minute
+    app = create_app(service=DummyService(), frontend_dir=tmp_path, rate_limit_per_minute=3)
+    client = TestClient(app)
+
+    for _ in range(3):
+        res = client.post("/api/generate", json={"prompt": "hello"})
+        assert res.status_code == 200
+
+    # 4th request exceeds rate limit
+    res_exceeded = client.post("/api/generate", json={"prompt": "hello"})
+    assert res_exceeded.status_code == 429
+    assert res_exceeded.headers.get("Retry-After") == "60"
+    assert "Rate limit exceeded" in res_exceeded.text
+
+
+def test_payload_size_limit(tmp_path):
+    app = create_app(service=DummyService(), frontend_dir=tmp_path)
+    client = TestClient(app)
+
+    # Fake oversized Content-Length header > 1MB
+    res = client.post("/api/generate", json={"prompt": "hello"}, headers={"Content-Length": "2000000"})
+    assert res.status_code == 413
+    assert "exceeds 1MB limit" in res.text
+
+
+def test_metrics_endpoint(tmp_path):
+    app = create_app(service=DummyService(), frontend_dir=tmp_path, max_concurrent_generations=5)
+    client = TestClient(app)
+
+    res = client.get("/api/metrics")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["max_concurrent_generations"] == 5
+    assert data["active_generations"] == 0
+    assert "concurrency_utilization" in data
+

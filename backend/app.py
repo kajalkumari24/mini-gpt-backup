@@ -4,13 +4,16 @@ Run from the project folder:
     python -m uvicorn backend.app:create_app --factory --port 8000
 Then open http://127.0.0.1:8000  (the chat page is served by this same app).
 """
+import collections
 import json
+import os
 import threading
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import List, Literal, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -81,7 +84,15 @@ class ModelSelectRequest(BaseModel):
     model: str
 
 
-def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_path=None):
+def create_app(
+    service=None,
+    frontend_dir=None,
+    checkpoint_path=None,
+    tokenizer_path=None,
+    max_concurrent_generations=None,
+    api_key=None,
+    rate_limit_per_minute=None,
+):
     """Build the app. Pass `service` to inject a model (used by the tests)."""
     frontend_dir = Path(frontend_dir or PROJECT_ROOT / "frontend")
 
@@ -92,9 +103,64 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
     }
     load_lock = threading.Lock()
 
-    MAX_CONCURRENT_GENERATIONS = 10
+    # Concurrency and CPU resource protection
+    env_concurrency = int(os.environ.get("MAX_CONCURRENT_GENERATIONS", "4"))
+    MAX_CONCURRENT_GENERATIONS = max_concurrent_generations or env_concurrency
     active_generations = 0
     gen_lock = threading.Lock()
+
+    # Authentication
+    API_KEY = api_key if api_key is not None else os.environ.get("MINI_GPT_API_KEY")
+
+    # Rate limiting
+    env_rate_limit = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "0"))  # 0 = disabled by default in dev
+    RATE_LIMIT_PER_MINUTE = rate_limit_per_minute if rate_limit_per_minute is not None else env_rate_limit
+    ip_request_timestamps = collections.defaultdict(list)
+    ip_lock = threading.Lock()
+
+    def check_rate_limit(request: Request):
+        if RATE_LIMIT_PER_MINUTE <= 0:
+            return
+        client_ip = request.client.host if request.client else "127.0.0.1"
+        now = time.time()
+        with ip_lock:
+            cutoff = now - 60.0
+            timestamps = [t for t in ip_request_timestamps[client_ip] if t > cutoff]
+            if len(timestamps) >= RATE_LIMIT_PER_MINUTE:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Rate limit exceeded. Please wait a moment before sending more requests.",
+                    headers={"Retry-After": "60"},
+                )
+            timestamps.append(now)
+            ip_request_timestamps[client_ip] = timestamps
+
+    def verify_auth(request: Request):
+        if not API_KEY:
+            return
+        auth_header = request.headers.get("Authorization")
+        api_key_header = request.headers.get("X-API-Key")
+        token = None
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+        elif api_key_header:
+            token = api_key_header.strip()
+        if token != API_KEY:
+            raise HTTPException(
+                status_code=401,
+                detail="Unauthorized: invalid or missing API key.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+    def check_request_guards(request: Request):
+        # 1. Payload size protection (max 1 MB)
+        content_length = request.headers.get("Content-Length")
+        if content_length and int(content_length) > 1_048_576:
+            raise HTTPException(status_code=413, detail="Request payload exceeds 1MB limit.")
+        # 2. Rate limiting
+        check_rate_limit(request)
+        # 3. Authentication
+        verify_auth(request)
 
     def acquire_generation_slot():
         nonlocal active_generations
@@ -103,6 +169,7 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
                 raise HTTPException(
                     status_code=429,
                     detail="Too many concurrent generation requests. Please try again shortly.",
+                    headers={"Retry-After": "2"},
                 )
             active_generations += 1
 
@@ -162,7 +229,7 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
             "null",
         ],
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type"],
+        allow_headers=["*"],
     )
 
     @app.get("/api/health")
@@ -170,6 +237,19 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
     def health():
         is_loaded = state["injected_service"] is not None or len(state["services"]) > 0
         return {"status": "ok", "model_loaded": is_loaded}
+
+    @app.get("/api/metrics")
+    def metrics():
+        svc = state["injected_service"] or state["services"].get(state["active_model"])
+        device_str = str(getattr(svc, "device", "cpu")) if svc else "unknown"
+        return {
+            "active_generations": active_generations,
+            "max_concurrent_generations": MAX_CONCURRENT_GENERATIONS,
+            "concurrency_utilization": active_generations / max(1, MAX_CONCURRENT_GENERATIONS),
+            "active_model": state["active_model"],
+            "loaded_models": list(state["services"].keys()),
+            "device": device_str,
+        }
 
     @app.get("/api/models")
     def list_models():
@@ -185,13 +265,21 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
         return {"models": models_list, "active_model": state["active_model"]}
 
     @app.post("/api/models/select")
-    def select_model(req: ModelSelectRequest):
+    def select_model(req: ModelSelectRequest, request: Request):
+        check_request_guards(request)
         if req.model not in AVAILABLE_MODELS:
             raise HTTPException(status_code=400, detail=f"Model '{req.model}' is not available.")
         if not AVAILABLE_MODELS[req.model]["checkpoint"].is_file():
             raise HTTPException(status_code=404, detail=f"Checkpoint for '{req.model}' not found.")
-        state["active_model"] = req.model
-        get_service(req.model)
+
+        # Two-phase atomic model switch: only update active_model after successful load
+        with load_lock:
+            if req.model not in state["services"]:
+                cfg = AVAILABLE_MODELS[req.model]
+                from backend.service import ModelService
+                new_service = ModelService.from_checkpoint(cfg["checkpoint"], cfg["tokenizer"])
+                state["services"][req.model] = new_service
+            state["active_model"] = req.model
         return {"status": "ok", "active_model": state["active_model"]}
 
     @app.get("/api/info")
@@ -211,22 +299,34 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
         }
 
     @app.post("/api/generate")
-    def generate_text(request: GenerateRequest):
+    def generate_text(request_body: GenerateRequest, request: Request):
+        check_request_guards(request)
         acquire_generation_slot()
+        svc = get_service()
         try:
-            return get_service().complete(
-                request.prompt, request.max_new_tokens, request.temperature, request.top_k, request.seed
+            return svc.complete(
+                request_body.prompt,
+                request_body.max_new_tokens,
+                request_body.temperature,
+                request_body.top_k,
+                request_body.seed,
             )
         finally:
             release_generation_slot()
 
     @app.post("/api/chat")
-    def chat(request: ChatRequest):
+    def chat(request_body: ChatRequest, request: Request):
+        check_request_guards(request)
         acquire_generation_slot()
+        svc = get_service()
         try:
-            messages = [m.model_dump() for m in request.messages]
-            return get_service().chat(
-                messages, request.max_new_tokens, request.temperature, request.top_k, request.seed
+            messages = [m.model_dump() for m in request_body.messages]
+            return svc.chat(
+                messages,
+                request_body.max_new_tokens,
+                request_body.temperature,
+                request_body.top_k,
+                request_body.seed,
             )
         finally:
             release_generation_slot()
@@ -234,25 +334,32 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
     @app.post("/api/chat/stream")
     @app.post("/api/stream_chat")
     @app.post("/stream_chat")
-    def chat_stream(request: ChatRequest):
+    def chat_stream(request_body: ChatRequest, request: Request):
+        check_request_guards(request)
         acquire_generation_slot()
         svc = get_service()
-        messages = [m.model_dump() for m in request.messages]
+        messages = [m.model_dump() for m in request_body.messages]
 
         def event_stream():
             try:
                 if hasattr(svc, "stream_chat"):
                     for chunk in svc.stream_chat(
                         messages,
-                        request.max_new_tokens,
-                        request.temperature,
-                        request.top_k,
-                        request.seed,
-                        request.repetition_penalty or 1.1,
+                        request_body.max_new_tokens,
+                        request_body.temperature,
+                        request_body.top_k,
+                        request_body.seed,
+                        request_body.repetition_penalty or 1.1,
                     ):
                         yield f"data: {json.dumps({'delta': chunk})}\n\n"
                 else:
-                    res = svc.chat(messages, request.max_new_tokens, request.temperature, request.top_k, request.seed)
+                    res = svc.chat(
+                        messages,
+                        request_body.max_new_tokens,
+                        request_body.temperature,
+                        request_body.top_k,
+                        request_body.seed,
+                    )
                     reply = res.get("reply", "")
                     for char in reply:
                         yield f"data: {json.dumps({'delta': char})}\n\n"
@@ -269,16 +376,18 @@ def create_app(service=None, frontend_dir=None, checkpoint_path=None, tokenizer_
         )
 
     @app.post("/chat")
-    def chat_compat(request: dict):
+    def chat_compat(request_body: dict, request: Request):
+        check_request_guards(request)
         acquire_generation_slot()
+        svc = get_service()
         try:
-            text = request.get("message") or request.get("prompt") or request.get("text") or ""
-            messages = request.get("messages")
+            text = request_body.get("message") or request_body.get("prompt") or request_body.get("text") or ""
+            messages = request_body.get("messages")
             if not messages and text:
                 messages = [{"role": "user", "content": text}]
             if not messages:
                 raise HTTPException(status_code=422, detail="No message or messages provided")
-            return get_service().chat(messages, 200, 0.8, 40, None)
+            return svc.chat(messages, 200, 0.8, 40, None)
         finally:
             release_generation_slot()
 
