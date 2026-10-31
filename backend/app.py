@@ -33,7 +33,7 @@ try:
 except Exception:
     DEFAULTS = {"max_new_tokens": 200, "temperature": 0.8, "top_k": 40, "repetition_penalty": 1.1}
 
-LIMITS = {"max_new_tokens": [1, 500], "temperature": [0.0, 2.0], "repetition_penalty": [1.0, 2.0]}
+LIMITS = {"max_new_tokens": [1, 500], "temperature": [0.0, 2.0], "repetition_penalty": [1.0, 2.0], "top_p": [0.0, 1.0]}
 
 AVAILABLE_MODELS = {
     "chat": {
@@ -42,6 +42,13 @@ AVAILABLE_MODELS = {
         "description": "Trained on conversational dialogue with [EOS] stop tokens (3.21M params)",
         "checkpoint": PROJECT_ROOT / "checkpoints" / "v3" / "best.pt",
         "tokenizer": PROJECT_ROOT / "checkpoints" / "tokenizer.json",
+    },
+    "chat-v4": {
+        "id": "chat-v4",
+        "name": "Chat Model (Mini-GPT v4 Enhanced)",
+        "description": "Trained on enriched multi-turn dialogues with Top-P and [EOS] tokens (3.21M params)",
+        "checkpoint": PROJECT_ROOT / "checkpoints" / "v4" / "best.pt",
+        "tokenizer": PROJECT_ROOT / "checkpoints" / "v4" / "tokenizer.json",
     },
     "shakespeare": {
         "id": "shakespeare",
@@ -62,6 +69,7 @@ class Settings(BaseModel):
     max_new_tokens: int = Field(DEFAULTS["max_new_tokens"], ge=1, le=500)
     temperature: float = Field(DEFAULTS["temperature"], ge=0.0, le=2.0)   # 0 = greedy
     top_k: Optional[int] = Field(DEFAULTS["top_k"], ge=1, le=1000)         # None = off
+    top_p: Optional[float] = Field(None, ge=0.0, le=1.0)                   # None = off
     seed: Optional[int] = Field(None, ge=0, le=2**31 - 1)                  # None = random
     repetition_penalty: Optional[float] = Field(DEFAULTS["repetition_penalty"], ge=1.0, le=2.0)
 
@@ -310,6 +318,7 @@ def create_app(
                 request_body.temperature,
                 request_body.top_k,
                 request_body.seed,
+                top_p=request_body.top_p,
             )
         finally:
             release_generation_slot()
@@ -327,6 +336,7 @@ def create_app(
                 request_body.temperature,
                 request_body.top_k,
                 request_body.seed,
+                top_p=request_body.top_p,
             )
         finally:
             release_generation_slot()
@@ -350,6 +360,7 @@ def create_app(
                         request_body.top_k,
                         request_body.seed,
                         request_body.repetition_penalty or 1.1,
+                        top_p=request_body.top_p,
                     ):
                         yield f"data: {json.dumps({'delta': chunk})}\n\n"
                 else:

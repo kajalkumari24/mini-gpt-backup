@@ -65,6 +65,11 @@ class CharTokenizer:
         content = "".join(f"{k}:{v};" for k, v in sorted(self.stoi.items()))
         return hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
 
+    @property
+    def eos_token_id(self) -> Optional[int]:
+        """Return token ID for [EOS] special token, or None if not present."""
+        return self.stoi.get("[EOS]")
+
     def get_config(self) -> Dict[str, Any]:
         """Return tokenizer configuration metadata for checkpoint serialization."""
         return {
@@ -191,6 +196,11 @@ class ByteTokenizer:
         """Deterministic hash of the special tokens added to the standard 256 byte vocabulary."""
         content = "byte256:" + ";".join(self.special_tokens)
         return hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
+
+    @property
+    def eos_token_id(self) -> Optional[int]:
+        """Return token ID for [EOS] special token, or None if not present."""
+        return self.special_to_id.get("[EOS]")
 
     def get_config(self) -> Dict[str, Any]:
         """Return tokenizer configuration metadata for checkpoint serialization."""

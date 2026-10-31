@@ -111,7 +111,8 @@ def main():
     text = data_path.read_text(encoding="utf-8")
     print(f"Data size: {len(text):,} characters")
 
-    tokenizer = CharTokenizer.from_text(text)
+    special_tokens = ["[EOS]"] if "[EOS]" in text else []
+    tokenizer = CharTokenizer.from_text(text, special_tokens=special_tokens)
     print(f"Vocabulary size: {tokenizer.vocab_size} unique characters")
     model_cfg = model_cfg.with_vocab_size(tokenizer.vocab_size)
 

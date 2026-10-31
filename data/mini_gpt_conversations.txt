@@ -976,3 +976,437 @@ What is recursion?
 
 BOT:
 Recursion is a programming technique where a function calls itself to solve a smaller instance of the same problem, stopping when it reaches a base case.[EOS]
+
+YOU:
+What is the difference between supervised and unsupervised learning?
+
+BOT:
+In supervised learning, the model is trained on input-output pairs with known labels. In unsupervised learning, the model discovers hidden patterns or clusters in unlabeled data without predefined answers.[EOS]
+
+YOU:
+What is an activation function in neural networks?
+
+BOT:
+An activation function introduces non-linearity into a neural network, allowing it to learn complex non-linear relationships rather than just linear transformations.[EOS]
+
+YOU:
+Why is GELU preferred over ReLU in modern Transformers?
+
+BOT:
+GELU (Gaussian Error Linear Unit) provides a smooth, non-monotonic curve that weights inputs by their probability under a Gaussian distribution, avoiding the 'dead neuron' problem of ReLU where negative gradients become zero.[EOS]
+
+YOU:
+What is the purpose of Layer Normalization?
+
+BOT:
+Layer Normalization stabilizes and accelerates training by normalizing the activations across the feature dimension for each token independently, preventing vanishing or exploding activations across deep layers.[EOS]
+
+YOU:
+What is residual connection?
+
+BOT:
+A residual connection adds the input of a layer directly to its output: x + sublayer(x). This creates a direct highway for gradients to flow backward through deep networks without vanishing.[EOS]
+
+YOU:
+What is temperature in text generation?
+
+BOT:
+Temperature scales the logits before the softmax operation. A temperature close to 0 makes sampling greedy and predictable, 1.0 preserves the raw probabilities, and values above 1.0 increase randomness and diversity.[EOS]
+
+YOU:
+What is top-p sampling?
+
+BOT:
+Top-p, or nucleus sampling, dynamically selects the smallest set of tokens whose cumulative probability reaches the threshold p. This adapts the candidate pool size based on the model's confidence.[EOS]
+
+YOU:
+What is overfitting?
+
+BOT:
+Overfitting happens when a model learns the training data, including noise, too well and performs poorly on unseen validation or test data. It is mitigated by dropout, weight decay, and larger datasets.[EOS]
+
+YOU:
+What is gradient clipping?
+
+BOT:
+Gradient clipping caps the maximum norm of parameter gradients to a threshold. This prevents exploding gradients during backpropagation, especially in deep Transformers.[EOS]
+
+YOU:
+What is weight decay in AdamW?
+
+BOT:
+In AdamW, weight decay is decoupled from the gradient updates, directly shrinking model weights by a factor at each step. This provides true L2 regularization for adaptive optimizers.[EOS]
+
+YOU:
+Can you help me write a Python function to check if a string is a palindrome?
+
+BOT:
+Yes, here is a simple and clean function:
+
+def is_palindrome(text: str) -> bool:
+    cleaned = "".join(c.lower() for c in text if c.isalnum())
+    return cleaned == cleaned[::-1][EOS]
+YOU:
+How would I test that with an example?
+
+BOT:
+You can test it like this:
+
+print(is_palindrome("Racecar"))  # True
+print(is_palindrome("hello"))    # False[EOS]
+
+YOU:
+Can you write a function to calculate the factorial of a number?
+
+BOT:
+Here is an iterative implementation in Python:
+
+def factorial(n: int) -> int:
+    if n < 0:
+        raise ValueError("Factorial is not defined for negative numbers.")
+    result = 1
+    for i in range(2, n + 1):
+        result *= i
+    return result[EOS]
+YOU:
+Can you show the recursive version too?
+
+BOT:
+Here is the recursive version:
+
+def factorial_recursive(n: int) -> int:
+    if n < 0:
+        raise ValueError("Factorial is not defined for negative numbers.")
+    if n in (0, 1):
+        return 1
+    return n * factorial_recursive(n - 1)[EOS]
+
+YOU:
+How do I read a file safely in Python?
+
+BOT:
+Use the 'with' statement, which automatically closes the file even if an exception occurs:
+
+with open("filename.txt", "r", encoding="utf-8") as file:
+    content = file.read()[EOS]
+YOU:
+How do I write lines to a file?
+
+BOT:
+Open the file in write mode ("w") with a context manager:
+
+lines = ["First line\n", "Second line\n"]
+with open("output.txt", "w", encoding="utf-8") as file:
+    file.writelines(lines)[EOS]
+
+YOU:
+How do I remove duplicates from a list while keeping the order?
+
+BOT:
+In Python 3.7+, dictionaries preserve insertion order, so you can do:
+
+unique_items = list(dict.fromkeys(my_list))[EOS]
+
+YOU:
+How do I sort a list of dictionaries by a specific key?
+
+BOT:
+Use the sorted() function with a lambda key:
+
+students = [{"name": "Alice", "score": 88}, {"name": "Bob", "score": 95}]
+sorted_students = sorted(students, key=lambda s: s["score"], reverse=True)[EOS]
+
+YOU:
+What is a list comprehension in Python?
+
+BOT:
+A list comprehension is a concise way to create lists based on existing iterables. For example:
+
+squares = [x * x for x in range(10) if x % 2 == 0][EOS]
+
+YOU:
+How do I flatten a 2D list in Python?
+
+BOT:
+You can use a list comprehension:
+
+matrix = [[1, 2], [3, 4], [5, 6]]
+flat = [item for row in matrix for item in row][EOS]
+
+YOU:
+What is the capital of France?
+
+BOT:
+The capital of France is Paris.[EOS]
+
+YOU:
+What is the capital of Japan?
+
+BOT:
+The capital of Japan is Tokyo.[EOS]
+
+YOU:
+What is the largest planet in our solar system?
+
+BOT:
+Jupiter is the largest planet in our solar system.[EOS]
+
+YOU:
+What is the chemical formula for water?
+
+BOT:
+The chemical formula for water is H2O.[EOS]
+
+YOU:
+What speed does light travel at in a vacuum?
+
+BOT:
+Light travels at approximately 299,792 kilometers per second (about 300,000 km/s) in a vacuum.[EOS]
+
+YOU:
+Who developed the theory of general relativity?
+
+BOT:
+Albert Einstein developed the theory of general relativity, published in 1915.[EOS]
+
+YOU:
+What is the difference between RAM and storage?
+
+BOT:
+RAM (Random Access Memory) is fast, volatile memory used by the CPU to store actively running programs. Storage (SSD or HDD) is non-volatile and preserves files and data when the computer is powered off.[EOS]
+
+YOU:
+What does an HTTP 404 status code mean?
+
+BOT:
+An HTTP 404 Not Found error indicates that the server cannot locate the requested resource.[EOS]
+
+YOU:
+What does an HTTP 500 status code mean?
+
+BOT:
+An HTTP 500 Internal Server Error indicates that the server encountered an unexpected condition that prevented it from fulfilling the request.[EOS]
+
+YOU:
+What will happen tomorrow at exactly 3:15 PM?
+
+BOT:
+I do not know. I cannot predict future events or real-time occurrences.[EOS]
+
+YOU:
+What is the secret password for John's private account?
+
+BOT:
+I do not have access to private accounts, passwords, or personal credentials.[EOS]
+
+YOU:
+Can you tell me the private phone number of the president?
+
+BOT:
+I do not have access to private personal contact information.[EOS]
+
+YOU:
+What is the answer to the secret question I didn't tell you?
+
+BOT:
+I do not have enough information to answer that. Please provide the question or relevant context.[EOS]
+
+YOU:
+What is the result of multiplying 12 by 12?
+
+BOT:
+12 multiplied by 12 is 144.[EOS]
+
+YOU:
+What is the square root of 64?
+
+BOT:
+The square root of 64 is 8.[EOS]
+
+YOU:
+Can you help me debug a Python error?
+
+BOT:
+Yes, please share the error message and the relevant snippet of code.[EOS]
+YOU:
+I get a TypeError: unsupported operand type(s) for +: 'int' and 'str'.
+
+BOT:
+That error means you are trying to add a number and a string directly. Convert the string to an integer with int(), or convert the number to a string with str(), depending on whether you want arithmetic addition or string concatenation.[EOS]
+
+YOU:
+Can you explain binary trees?
+
+BOT:
+A binary tree is a hierarchical data structure where each node has at most two children, typically referred to as the left child and right child.[EOS]
+YOU:
+What is a binary search tree?
+
+BOT:
+A binary search tree (BST) is a binary tree where for every node, all values in the left subtree are smaller than the node's value, and all values in the right subtree are greater.[EOS]
+
+YOU:
+How do I check if a file exists in Python?
+
+BOT:
+Use pathlib.Path:
+
+from pathlib import Path
+if Path("my_file.txt").is_file():
+    print("File exists")[EOS]
+
+YOU:
+What is the difference between a list and a tuple in Python?
+
+BOT:
+Lists are mutable (their items can be modified, appended, or removed), created using square brackets []. Tuples are immutable (cannot be altered after creation), created using parentheses ().[EOS]
+
+YOU:
+Why would I use a tuple instead of a list?
+
+BOT:
+Tuples are faster, use less memory, guarantee immutability, and can be used as keys in dictionaries or elements in sets, whereas lists cannot.[EOS]
+
+YOU:
+What is an algorithm?
+
+BOT:
+An algorithm is a step-by-step sequence of unambiguous instructions designed to solve a specific problem or perform a computation.[EOS]
+
+YOU:
+Can you explain how attention works in simple terms?
+
+BOT:
+Attention allows each word or token to focus on other relevant words in the sequence. For example, in 'The animal didn't cross the street because it was too tired', attention connects 'it' to 'animal' rather than 'street'.[EOS]
+YOU:
+What are queries, keys, and values?
+
+BOT:
+Queries represent what a token is looking for, Keys represent what a token contains or offers, and Values contain the actual content passed forward when a query and key match.[EOS]
+
+YOU:
+What is the difference between a stack and a queue?
+
+BOT:
+A stack is Last-In, First-Out (LIFO), meaning the last element added is the first one removed. A queue is First-In, First-Out (FIFO), meaning the first element added is the first one removed.[EOS]
+YOU:
+How can I implement a stack in Python?
+
+BOT:
+A standard Python list works directly as a stack: use append() to push and pop() to pop.[EOS]
+YOU:
+How about a queue?
+
+BOT:
+For a queue, use collections.deque with append() and popleft() for efficient O(1) removals from the front.[EOS]
+
+YOU:
+How do I count character frequencies in a string using Python?
+
+BOT:
+You can use collections.Counter:
+
+from collections import Counter
+counts = Counter("hello world")[EOS]
+
+YOU:
+What is the difference between synchronous and asynchronous programming?
+
+BOT:
+Synchronous operations execute sequentially, blocking subsequent tasks until the current one finishes. Asynchronous operations allow a program to handle other tasks while waiting for I/O operations (like network or disk access) to complete.[EOS]
+
+YOU:
+What is a generator in Python?
+
+BOT:
+A generator is a function that produces a sequence of values lazily using the 'yield' keyword, saving memory because values are computed on the fly rather than stored all at once in RAM.[EOS]
+
+YOU:
+Can you give an example of a generator?
+
+BOT:
+Here is a simple countdown generator:
+
+def countdown(n):
+    while n > 0:
+        yield n
+        n -= 1[EOS]
+
+YOU:
+What is the difference between deep copy and shallow copy?
+
+BOT:
+A shallow copy creates a new compound object and inserts references to the original elements. A deep copy recursively duplicates every object found within the original structure, creating completely independent copies.[EOS]
+
+YOU:
+What is a decorator in Python?
+
+BOT:
+A decorator is a function that takes another function as an argument, extends or alters its behavior without modifying its source code, and returns the modified function.[EOS]
+
+YOU:
+Can you show a simple decorator example?
+
+BOT:
+Here is a logging decorator:
+
+def log_call(func):
+    def wrapper(*args, **kwargs):
+        print(f"Calling {func.__name__}")
+        return func(*args, **kwargs)
+    return wrapper[EOS]
+
+YOU:
+What will the stock price of Apple be next Monday?
+
+BOT:
+I do not know. I cannot predict financial markets, future asset prices, or stock movements.[EOS]
+
+YOU:
+What did I eat for dinner last night?
+
+BOT:
+I do not have access to your personal life, private activities, or personal history.[EOS]
+
+YOU:
+Who won the unannounced championship in the year 2045?
+
+BOT:
+I do not know. That is a future event and information about it does not exist.[EOS]
+
+YOU:
+What is the speed of sound in dry air at 20 degrees Celsius?
+
+BOT:
+The speed of sound in dry air at 20 degrees Celsius is approximately 343 meters per second (1,235 km/h).[EOS]
+
+YOU:
+What is the boiling point of water at standard sea level?
+
+BOT:
+The boiling point of water at standard atmospheric pressure (sea level) is 100 degrees Celsius or 212 degrees Fahrenheit.[EOS]
+
+YOU:
+What is the smallest prime number?
+
+BOT:
+The smallest prime number is 2, which is also the only even prime number.[EOS]
+
+YOU:
+What is the primary function of the mitochondria in a biological cell?
+
+BOT:
+The mitochondria generate most of the chemical energy (ATP) needed by the cell, which is why they are often called the powerhouses of the cell.[EOS]
+
+YOU:
+What is git rebase vs git merge?
+
+BOT:
+Git merge creates a new merge commit combining two branches, preserving complete commit history. Git rebase moves or reapplies commits on top of another base branch, creating a cleaner, linear commit history.[EOS]
+
+YOU:
+What does the term 'idempotent' mean in computing?
+
+BOT:
+An operation is idempotent if applying it multiple times produces the exact same result as applying it once, without unintended side effects. For example, setting x = 5 is idempotent, but x = x + 1 is not.[EOS]
+

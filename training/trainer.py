@@ -121,8 +121,14 @@ class Trainer:
                     self._save("best.pt", step, best_val, history)
                     marker = "  <- best"
                 self._save("last.pt", step, best_val, history)
-                log(f"step {step:5d} | train {train_loss:.4f} | val {val_loss:.4f} "
-                    f"| lr {lr:.2e} | {time.time() - began:5.0f}s{marker}")
+                msg = (
+                    f"step {step:5d} | train {train_loss:.4f} | val {val_loss:.4f} "
+                    f"| lr {lr:.2e} | {time.time() - began:5.0f}s{marker}"
+                )
+                try:
+                    log(msg, flush=True)
+                except TypeError:
+                    log(msg)
 
             if step == max_steps:
                 break

@@ -65,7 +65,9 @@ class ModelService:
 
     def _ignored(self, text: str) -> List[str]:
         """Characters the tokenizer has never seen. They are skipped, not an error."""
-        return sorted(set(text) - set(self.tokenizer.stoi))
+        if hasattr(self.tokenizer, "stoi"):
+            return sorted(set(text) - set(self.tokenizer.stoi))
+        return []
 
     def _continue(
         self,
@@ -76,6 +78,7 @@ class ModelService:
         seed: Optional[int],
         repetition_penalty: float = 1.1,
         stop_strings: Optional[List[str]] = None,
+        top_p: Optional[float] = None,
     ) -> str:
         ids = self.tokenizer.encode(prompt, errors="ignore")
         if not ids:
@@ -88,8 +91,9 @@ class ModelService:
                 self.model,
                 start,
                 max_new_tokens,
-                temperature,
-                top_k,
+                temperature=temperature,
+                top_k=top_k,
+                top_p=top_p,
                 repetition_penalty=repetition_penalty,
                 stop_strings=stop_strings,
                 tokenizer=self.tokenizer,
@@ -104,6 +108,7 @@ class ModelService:
         top_k: Optional[int],
         seed: Optional[int] = None,
         repetition_penalty: float = 1.1,
+        top_p: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Plain text continuation. Returns only the newly generated text."""
         text = self._continue(
@@ -113,7 +118,9 @@ class ModelService:
             top_k,
             seed,
             repetition_penalty=repetition_penalty,
+            top_p=top_p,
         )
+        return {"text": text, "ignored_characters": self._ignored(prompt)}
         return {"text": text, "ignored_characters": self._ignored(prompt)}
 
     def supports_eos(self) -> bool:
@@ -138,6 +145,7 @@ class ModelService:
         top_k: Optional[int],
         seed: Optional[int] = None,
         repetition_penalty: float = 1.1,
+        top_p: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Write the history as a script and return BOT's next speech."""
         import re
@@ -157,6 +165,7 @@ class ModelService:
             seed,
             repetition_penalty=repetition_penalty,
             stop_strings=stop_strings,
+            top_p=top_p,
         )
         everything = "".join(m["content"] for m in messages)
         return {
@@ -172,6 +181,7 @@ class ModelService:
         top_k: Optional[int],
         seed: Optional[int] = None,
         repetition_penalty: float = 1.1,
+        top_p: Optional[float] = None,
     ):
         """Yield generated text tokens in real time, stopping cleanly at [EOS], EOS, or speaker labels.
 
@@ -204,8 +214,9 @@ class ModelService:
                 self.model,
                 start,
                 max_new_tokens,
-                temperature,
-                top_k,
+                temperature=temperature,
+                top_k=top_k,
+                top_p=top_p,
                 repetition_penalty=repetition_penalty,
                 stop_strings=None,
                 tokenizer=self.tokenizer,

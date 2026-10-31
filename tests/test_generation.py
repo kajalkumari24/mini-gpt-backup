@@ -111,6 +111,47 @@ def test_bad_arguments_rejected():
         generate(model, torch.tensor([1, 2]), 3)
     with pytest.raises(ValueError):
         generate(model, torch.zeros((1, 0), dtype=torch.long), 3)
+    with pytest.raises(ValueError):
+        generate(model, start, 3, top_p=-0.1)
+    with pytest.raises(ValueError):
+        generate(model, start, 3, top_p=1.5)
+
+
+def test_top_p_nucleus_sampling():
+    # LOGITS = [5.0, 4.0, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0]
+    # With a small top_p, only the top token(s) can ever be sampled
+    model = FixedLogitsModel(LOGITS)
+    samples = sample_one_token(model, rows=300, top_p=0.4, temperature=1.0).tolist()
+    assert set(samples) <= {0, 1}
+    # With top_p=1.0 or None, low probability tokens appear
+    broad = sample_one_token(model, rows=300, top_p=1.0, temperature=1.0).tolist()
+    assert len(set(broad)) > 2
+
+
+def test_eos_token_id_stops_immediately():
+    # A model that always predicts token 4
+    logits = [0.0] * 8
+    logits[4] = 10.0
+    model = FixedLogitsModel(logits)
+    start = torch.tensor([[0, 1]])
+    # If eos_token_id is 4, generation should stop on the very first token
+    out = generate(model, start, max_new_tokens=10, temperature=0.0, eos_token_id=4)
+    assert out.shape == (1, 3)
+    assert out[0, 2].item() == 4
+
+
+def test_byte_tokenizer_generation_compatibility():
+    from model.tokenizer import ByteTokenizer
+    tok = ByteTokenizer(special_tokens=["[EOS]"])
+    cfg = ModelConfig(
+        vocab_size=tok.vocab_size, context_length=32, embedding_dim=32,
+        num_heads=4, num_layers=2, dropout=0.0
+    )
+    model = GPT(cfg)
+    # Ensure generate works with ByteTokenizer instance and stop_strings
+    start = torch.tensor([[65, 66]])  # 'AB'
+    out = generate(model, start, max_new_tokens=5, tokenizer=tok, stop_strings=["[EOS]"])
+    assert out.shape[1] >= 3
 
 
 def test_generate_text_skips_unknown_characters():
