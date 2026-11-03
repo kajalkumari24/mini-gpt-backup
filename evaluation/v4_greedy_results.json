@@ -1,0 +1,289 @@
+{
+  "total_questions": 25,
+  "total_passed": 0,
+  "overall_pass_rate": 0.0,
+  "category_summary": {
+    "factual": {
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "avg_3gram_repetition": 0.929518293804008
+    },
+    "coding": {
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "avg_3gram_repetition": 0.9283783783783784
+    },
+    "reasoning": {
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "avg_3gram_repetition": 0.9200588343445487
+    },
+    "explanation": {
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "avg_3gram_repetition": 0.9283140283140282
+    },
+    "uncertainty": {
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "avg_3gram_repetition": 0.9253171538885825
+    }
+  },
+  "results": [
+    {
+      "id": "fact_01",
+      "category": "factual",
+      "question": "What is the capital of Germany?",
+      "reply": "A is a a a a a a a a a a a a a a a a a a a a a a a a a a a sure sure sunor a a a a a a sunore sune the the the the the the the in in in in in the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['berlin']",
+      "repetition_rate_3gram": 0.9251700680272109,
+      "distinct_2grams": 0.14189189189189189
+    },
+    {
+      "id": "fact_02",
+      "category": "factual",
+      "question": "What planet is closest to the Sun?",
+      "reply": "A a a a a a a a a a a a a a a a a a a a a a a sure a a a sususususustor a a stor stor sthe sthe a se a a sthe se the the the the in in the the the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['mercury']",
+      "repetition_rate_3gram": 0.9391891891891891,
+      "distinct_2grams": 0.1342281879194631
+    },
+    {
+      "id": "fact_03",
+      "category": "factual",
+      "question": "What is the freezing point of water in Celsius?",
+      "reply": "A a a a a a a a a a a a a a a a a a a a a a sure sure sure a a a a a a sthe sunore sthe sthe the the the the the the the in the in in the the the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['0', 'zero']",
+      "repetition_rate_3gram": 0.9523809523809523,
+      "distinct_2grams": 0.12162162162162163
+    },
+    {
+      "id": "fact_04",
+      "category": "factual",
+      "question": "What does CPU stand for in computer science?",
+      "reply": "A is ang and ande ande and anore a and a a a a a a a a sunore a a stor stor stor se a the tor the the the the the the the the the the in the the the t",
+      "passed": false,
+      "details": "Matched keywords: [] / ['central processing unit']",
+      "repetition_rate_3gram": 0.8648648648648649,
+      "distinct_2grams": 0.18791946308724833
+    },
+    {
+      "id": "fact_05",
+      "category": "factual",
+      "question": "How many days are in a standard leap year?",
+      "reply": "A a a a a a a a a a a a a a a a a a a sure a a a sure a a sure sure a a a a sunore sthe sthe sthe the the in the the the the the in in in the the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['366']",
+      "repetition_rate_3gram": 0.9659863945578231,
+      "distinct_2grams": 0.12162162162162163
+    },
+    {
+      "id": "code_01",
+      "category": "coding",
+      "question": "Write a python function `is_even(n)` that returns True if n is even, False otherwise.",
+      "reply": "A a a a a a a a a a a a a a a a a a a a a a a a a a a a a sure sure a sune sune sune sun sune stor stor stor stor the the the in in the in the the the",
+      "passed": false,
+      "details": "Code execution FAILED",
+      "repetition_rate_3gram": 0.9594594594594594,
+      "distinct_2grams": 0.1342281879194631
+    },
+    {
+      "id": "code_02",
+      "category": "coding",
+      "question": "Write a python function `sum_list(numbers)` that returns the sum of all elements in the list.",
+      "reply": "A is a a a a a a a a a a a a a a a a a a a a a core a a sure a sunore sune sune sthe sthe a sthe sthe the the the the the the in in in the the the the",
+      "passed": false,
+      "details": "Code execution FAILED",
+      "repetition_rate_3gram": 0.9121621621621622,
+      "distinct_2grams": 0.15436241610738255
+    },
+    {
+      "id": "code_03",
+      "category": "coding",
+      "question": "Write a python function `reverse_string(s)` that returns the reversed string.",
+      "reply": "A is a a a a a a a a a a a a a a a a a a a a a a a a a a a sure core sure store store stor stor sthe sthe sth se the the the the in in the the the the",
+      "passed": false,
+      "details": "Code execution FAILED",
+      "repetition_rate_3gram": 0.8986486486486487,
+      "distinct_2grams": 0.1610738255033557
+    },
+    {
+      "id": "code_04",
+      "category": "coding",
+      "question": "Write a python function `count_vowels(s)` that counts vowels (a, e, i, o, u) case-insensitively.",
+      "reply": "A a a a a a a a a a a a a a a a a a a a a a a a sure sunore sthe sun sune a sune a sthe sthe sthe a sthe a a sthe the the in the in the the the the th",
+      "passed": false,
+      "details": "Code execution FAILED",
+      "repetition_rate_3gram": 0.9459459459459459,
+      "distinct_2grams": 0.12751677852348994
+    },
+    {
+      "id": "code_05",
+      "category": "coding",
+      "question": "Write a python function `find_min(nums)` that returns the minimum number in a list, or None if empty.",
+      "reply": "A in a a a a a a a a a a a a a a a a a a a a sure a a a sure sun sun sun sun a sun sune sun a a a sune a sune stor sthe the th in in in in in a an the",
+      "passed": false,
+      "details": "Code execution FAILED",
+      "repetition_rate_3gram": 0.9256756756756757,
+      "distinct_2grams": 0.1476510067114094
+    },
+    {
+      "id": "reason_01",
+      "category": "reasoning",
+      "question": "If all squares are rectangles, and all rectangles are shapes, are all squares shapes?",
+      "reply": "A atin te ande te the ande the anore the anse the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['yes', 'true', 'are shapes']",
+      "repetition_rate_3gram": 0.9115646258503401,
+      "distinct_2grams": 0.12837837837837837
+    },
+    {
+      "id": "reason_02",
+      "category": "reasoning",
+      "question": "If Tom is older than Bob, and Bob is older than Jim, who is the youngest?",
+      "reply": "A a a a a a a a a a a a a a a a a a a a a a a a a a a a susunore sthe sthe a sthe sthe sthe sthe the the the the the in the the the in the the the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['jim']",
+      "repetition_rate_3gram": 0.9324324324324325,
+      "distinct_2grams": 0.12080536912751678
+    },
+    {
+      "id": "reason_03",
+      "category": "reasoning",
+      "question": "A farmer has 10 sheep. All but 3 run away. How many sheep does the farmer have left?",
+      "reply": "The a a a a a a a a a a a a a a a a core sthe the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['3', 'three']",
+      "repetition_rate_3gram": 0.9319727891156463,
+      "distinct_2grams": 0.08783783783783784
+    },
+    {
+      "id": "reason_04",
+      "category": "reasoning",
+      "question": "If today is Tuesday, what day of the week will it be in 2 days?",
+      "reply": "A a a a a a a a a a a a a a a a a a a a a a a a a a sususususususthere sthe sthe a sthe sthe a a se a a a a a a anore the the in the the the the the t",
+      "passed": false,
+      "details": "Matched keywords: [] / ['thursday']",
+      "repetition_rate_3gram": 0.8986486486486487,
+      "distinct_2grams": 0.1342281879194631
+    },
+    {
+      "id": "reason_05",
+      "category": "reasoning",
+      "question": "Which is heavier: 1 kilogram of iron or 1 kilogram of feathers?",
+      "reply": "A a a a a a a a a a a a a a a a a a sustore a a stor a store sthe sthe sthe a a se a a a a a a se the se a a the the the the the in the the the the th",
+      "passed": false,
+      "details": "Matched keywords: [] / ['same', 'equal', 'neither', 'weigh the same']",
+      "repetition_rate_3gram": 0.9256756756756757,
+      "distinct_2grams": 0.12751677852348994
+    },
+    {
+      "id": "exp_01",
+      "category": "explanation",
+      "question": "What is the difference between a compiler and an interpreter?",
+      "reply": "A ing athe an an an a a a a a a a a a sure a a a sthe se a se a a a a a a a sunore sunore sthe the the the the the the the the the in the in the the t",
+      "passed": false,
+      "details": "Matched keywords: [] / ['compile', 'interpret', 'line', 'code']",
+      "repetition_rate_3gram": 0.9459459459459459,
+      "distinct_2grams": 0.15436241610738255
+    },
+    {
+      "id": "exp_02",
+      "category": "explanation",
+      "question": "What is recursion in computer programming?",
+      "reply": "A ating ate athe athe an ande an a a a a a a a a se se a se a a a a sure sthe sthe sthe the sthe the the the the the the the the the in the the the th",
+      "passed": false,
+      "details": "Matched keywords: [] / ['call', 'itself', 'base']",
+      "repetition_rate_3gram": 0.8716216216216216,
+      "distinct_2grams": 0.1610738255033557
+    },
+    {
+      "id": "exp_03",
+      "category": "explanation",
+      "question": "Explain what a database transaction is.",
+      "reply": "A is a a a a a a a a a a a a a a a a a a a a a a a a a sure sure a a a a a a a sure a a sune sune sthe stor stor the the the the in in in in in the th",
+      "passed": false,
+      "details": "Matched keywords: [] / ['atomic', 'unit', 'commit', 'rollback', 'operation']",
+      "repetition_rate_3gram": 0.9391891891891891,
+      "distinct_2grams": 0.1476510067114094
+    },
+    {
+      "id": "exp_04",
+      "category": "explanation",
+      "question": "What is an IP address?",
+      "reply": "A a a a a a a a a a a a a a a a a a a a a a a a a sure a a sure a a sure sure sunor a a a a a a sune sune the sthe the in the in in in in the the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['network', 'address', 'device', 'internet', 'identifier']",
+      "repetition_rate_3gram": 0.9523809523809523,
+      "distinct_2grams": 0.13513513513513514
+    },
+    {
+      "id": "exp_05",
+      "category": "explanation",
+      "question": "What is the role of an operating system?",
+      "reply": "A a a a a a a a a a a a a a a a a a a a sure a a a sure sure sure a a a a a a sthe sthe sthe sthe a sthe tore se the the the in the the the the the th",
+      "passed": false,
+      "details": "Matched keywords: [] / ['hardware', 'manage', 'resource', 'software']",
+      "repetition_rate_3gram": 0.9324324324324325,
+      "distinct_2grams": 0.12080536912751678
+    },
+    {
+      "id": "uncert_01",
+      "category": "uncertainty",
+      "question": "What will the winning lottery number be next year?",
+      "reply": "A a a a a a sthe a a a a a a a a a a susthe sthe sthe a a sthe sthe sthe the se a a a a the se a the a a a a a a anounour the the the the the the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['do not know', 'cannot predict', 'unknown', 'impossible']",
+      "repetition_rate_3gram": 0.9251700680272109,
+      "distinct_2grams": 0.12162162162162163
+    },
+    {
+      "id": "uncert_02",
+      "category": "uncertainty",
+      "question": "What is the secret passcode to Jane's personal diary?",
+      "reply": "A an an a anore a a a a a a a a a a a sustore stor stor a stor a sthe a a a se sthe a a se a a a se the the the the the the the in se the the the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['do not know', 'cannot', 'private', 'no access']",
+      "repetition_rate_3gram": 0.9251700680272109,
+      "distinct_2grams": 0.14189189189189189
+    },
+    {
+      "id": "uncert_03",
+      "category": "uncertainty",
+      "question": "Who was the elected governor of the lost city of Atlantis in 1842?",
+      "reply": "A is is in an a a a a a a a a a a a a a a a a a a a a sususthe sthe sthe sthe sthe sthe sthe sthe sthe sthe a a a a a a the the the the the inoule the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['fictional', 'myth', 'do not know', 'does not exist']",
+      "repetition_rate_3gram": 0.8918918918918919,
+      "distinct_2grams": 0.14093959731543623
+    },
+    {
+      "id": "uncert_04",
+      "category": "uncertainty",
+      "question": "What did Napoleon Bonaparte have for breakfast on his 7th birthday?",
+      "reply": "A an an a a a a a a a a a a a a a a a a a a a suse a a a a a a a sure a a a sule sure sunore sthe sthe sthe the the the in th in in in in the the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['unknown', 'no record', 'do not know', 'not recorded']",
+      "repetition_rate_3gram": 0.9047619047619048,
+      "distinct_2grams": 0.16216216216216217
+    },
+    {
+      "id": "uncert_05",
+      "category": "uncertainty",
+      "question": "What is the private password of user admin?",
+      "reply": "A a a a a a a a a a a a a a a a a a a a a a a a sure a a sure sure a a a a sunore sunore sthe sthe the sthe the th the in the in in in in the the the",
+      "passed": false,
+      "details": "Matched keywords: [] / ['do not know', 'cannot', 'private', 'no access']",
+      "repetition_rate_3gram": 0.9795918367346939,
+      "distinct_2grams": 0.12837837837837837
+    }
+  ]
+}

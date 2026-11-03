@@ -9,10 +9,10 @@ class DummyService:
     def info(self):
         return {"parameters": 100, "vocab_size": 30, "context_length": 64, "device": "cpu"}
 
-    def complete(self, prompt, max_new_tokens, temperature, top_k, seed=None):
+    def complete(self, prompt, max_new_tokens, temperature, top_k, seed=None, **kwargs):
         return {"text": "ok", "ignored_characters": []}
 
-    def chat(self, messages, max_new_tokens, temperature, top_k, seed=None):
+    def chat(self, messages, max_new_tokens, temperature, top_k, seed=None, **kwargs):
         return {"reply": "ok", "ignored_characters": []}
 
 

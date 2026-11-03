@@ -17,13 +17,13 @@ class MockService:
             "best_val_loss": 1.5,
         }
 
-    def complete(self, prompt, max_new_tokens, temperature, top_k, seed=None):
+    def complete(self, prompt, max_new_tokens, temperature, top_k, seed=None, **kwargs):
         return {"text": " completion", "ignored_characters": []}
 
-    def chat(self, messages, max_new_tokens, temperature, top_k, seed=None):
+    def chat(self, messages, max_new_tokens, temperature, top_k, seed=None, **kwargs):
         return {"reply": "Hi there!", "ignored_characters": []}
 
-    def stream_chat(self, messages, max_new_tokens, temperature, top_k, seed=None, repetition_penalty=1.1):
+    def stream_chat(self, messages, max_new_tokens, temperature, top_k, seed=None, repetition_penalty=1.1, **kwargs):
         yield "Hi"
         yield " there"
         yield "!"

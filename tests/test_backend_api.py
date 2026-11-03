@@ -14,11 +14,11 @@ class StubService:
         return {"parameters": 1234, "vocab_size": 65, "context_length": 128,
                 "device": "cpu", "checkpoint_step": 1000, "best_val_loss": 2.49}
 
-    def complete(self, prompt, max_new_tokens, temperature, top_k, seed=None):
+    def complete(self, prompt, max_new_tokens, temperature, top_k, seed=None, **kwargs):
         self.calls.append(("complete", prompt, max_new_tokens, temperature, top_k, seed))
         return {"text": " and so on", "ignored_characters": []}
 
-    def chat(self, messages, max_new_tokens, temperature, top_k, seed=None):
+    def chat(self, messages, max_new_tokens, temperature, top_k, seed=None, **kwargs):
         self.calls.append(("chat", messages, max_new_tokens, temperature, top_k, seed))
         return {"reply": "Good morrow", "ignored_characters": ["é"]}
 

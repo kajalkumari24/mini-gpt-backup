@@ -1,0 +1,289 @@
+{
+  "total_questions": 25,
+  "total_passed": 0,
+  "overall_pass_rate": 0.0,
+  "category_summary": {
+    "factual": {
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "avg_3gram_repetition": 0.2256756756756757
+    },
+    "coding": {
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "avg_3gram_repetition": 0.1099099099099099
+    },
+    "reasoning": {
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "avg_3gram_repetition": 0.22557396105783206
+    },
+    "explanation": {
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "avg_3gram_repetition": 0.22297297297297297
+    },
+    "uncertainty": {
+      "total": 5,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "avg_3gram_repetition": 0.23513513513513512
+    }
+  },
+  "results": [
+    {
+      "id": "fact_01",
+      "category": "factual",
+      "question": "What is the capital of Germany?",
+      "reply": "A asida atenero an cte and ustiora wo inge an edese thermod pr cthice cal tin ty\nvanif s tin masicon an tonit ororratatalenin pes ise ting ans uave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['berlin']",
+      "repetition_rate_3gram": 0.22297297297297297,
+      "distinct_2grams": 0.5436241610738255
+    },
+    {
+      "id": "fact_02",
+      "category": "factual",
+      "question": "What planet is closest to the Sun?",
+      "reply": "A asida atenero an cte and ust a a wo dind an edesk thermod pr ctonce cal tin ty\nvanif sorm worsicon an torit ororratatalenin pes ise ting ans uave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['mercury']",
+      "repetition_rate_3gram": 0.1891891891891892,
+      "distinct_2grams": 0.5704697986577181
+    },
+    {
+      "id": "fact_03",
+      "category": "factual",
+      "question": "What is the freezing point of water in Celsius?",
+      "reply": "A asida atenero an cte and usthe a wo dind an erese thermod pr ctonce cal tin ty\nY in I orm worsico tan torit ororratatalenin cts ise ting e's uave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['0', 'zero']",
+      "repetition_rate_3gram": 0.24324324324324326,
+      "distinct_2grams": 0.5436241610738255
+    },
+    {
+      "id": "fact_04",
+      "category": "factual",
+      "question": "What does CPU stand for in computer science?",
+      "reply": "A asidatateneron ticte and us s atoro dind an edesenthermod pr ctonce cal tin ty\nY in I orm worsicon an torit ororratatalenin pes ise ting ans uave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['central processing unit']",
+      "repetition_rate_3gram": 0.21621621621621623,
+      "distinct_2grams": 0.5436241610738255
+    },
+    {
+      "id": "fact_05",
+      "category": "factual",
+      "question": "How many days are in a standard leap year?",
+      "reply": "A ascuatatenero an cte and use a a wo dind an edesk thermod pr ctoice cal tin ty\nY in I orm worsicon an torit ororratata inin pes ise ting ans uave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['366']",
+      "repetition_rate_3gram": 0.25675675675675674,
+      "distinct_2grams": 0.5436241610738255
+    },
+    {
+      "id": "code_01",
+      "category": "coding",
+      "question": "Write a python function `is_even(n)` that returns True if n is even, False otherwise.",
+      "reply": "Gins ba a ten cin betexand us s aroro dind an edese thermod pr cthice cal tin ty\nvanif s.",
+      "passed": false,
+      "details": "Code execution FAILED",
+      "repetition_rate_3gram": 0.04597701149425287,
+      "distinct_2grams": 0.6931818181818182
+    },
+    {
+      "id": "code_02",
+      "category": "coding",
+      "question": "Write a python function `sum_list(numbers)` that returns the sum of all elements in the list.",
+      "reply": "Gins da a teero an cte andexI sura wo dind an edese thermodin oct ice cal tin ty\nvanif s.",
+      "passed": false,
+      "details": "Code execution FAILED",
+      "repetition_rate_3gram": 0.10344827586206896,
+      "distinct_2grams": 0.6704545454545454
+    },
+    {
+      "id": "code_03",
+      "category": "coding",
+      "question": "Write a python function `reverse_string(s)` that returns the reversed string.",
+      "reply": "Gins bat tenero an cte andexI s atoro dindiss edesen wermodin oct ice cal tin ty\nvanif s.",
+      "passed": false,
+      "details": "Code execution FAILED",
+      "repetition_rate_3gram": 0.09195402298850575,
+      "distinct_2grams": 0.6704545454545454
+    },
+    {
+      "id": "code_04",
+      "category": "coding",
+      "question": "Write a python function `count_vowels(s)` that counts vowels (a, e, i, o, u) case-insensitively.",
+      "reply": "Gins da atenero an ctex sen I sura wo dind an edese thermodin oct ice cal tin ty\nvanif s.",
+      "passed": false,
+      "details": "Code execution FAILED",
+      "repetition_rate_3gram": 0.09195402298850575,
+      "distinct_2grams": 0.7045454545454546
+    },
+    {
+      "id": "code_05",
+      "category": "coding",
+      "question": "Write a python function `find_min(nums)` that returns the minimum number in a list, or None if empty.",
+      "reply": "Gins da a texthin be in sen I sura wo dind an erese thermod pr cthice cal tin ty\nvanif s tin masicon an ton a ororrat:\n 'stin pes ise  ing  'sh ave  \"",
+      "passed": false,
+      "details": "Code execution FAILED",
+      "repetition_rate_3gram": 0.21621621621621623,
+      "distinct_2grams": 0.5906040268456376
+    },
+    {
+      "id": "reason_01",
+      "category": "reasoning",
+      "question": "If all squares are rectangles, and all rectangles are shapes, are all squares shapes?",
+      "reply": "A asidat teee cinticte and us s atoro dind an edese thermodin octaice cal tin ty\nY in I orm womupe ctan ton a ororratatalenin prs ise tin a 'sheave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['yes', 'true', 'are shapes']",
+      "repetition_rate_3gram": 0.25675675675675674,
+      "distinct_2grams": 0.5570469798657718
+    },
+    {
+      "id": "reason_02",
+      "category": "reasoning",
+      "question": "If Tom is older than Bob, and Bob is older than Jim, who is the youngest?",
+      "reply": "A asy a a teero an cte andexI sula wind th an edese thermod pr cthice cal tin ty\nY in I ormans.",
+      "passed": false,
+      "details": "Matched keywords: [] / ['jim']",
+      "repetition_rate_3gram": 0.13978494623655913,
+      "distinct_2grams": 0.648936170212766
+    },
+    {
+      "id": "reason_03",
+      "category": "reasoning",
+      "question": "A farmer has 10 sheep. All but 3 run away. How many sheep does the farmer have left?",
+      "reply": "A asida atenero an cte and ust a a wisiner an erese thermodin octhice cal tin ty\nY in I orm womupe ctan ton a ororratata inin prs ise ting ansheave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['3', 'three']",
+      "repetition_rate_3gram": 0.25675675675675674,
+      "distinct_2grams": 0.5436241610738255
+    },
+    {
+      "id": "reason_04",
+      "category": "reasoning",
+      "question": "If today is Tuesday, what day of the week will it be in 2 days?",
+      "reply": "A asy a a teracinthe e and usthe a wo dind an edese thermodin octhice cal tin ty\nY in I ormpes.",
+      "passed": false,
+      "details": "Matched keywords: [] / ['thursday']",
+      "repetition_rate_3gram": 0.20430107526881722,
+      "distinct_2grams": 0.6276595744680851
+    },
+    {
+      "id": "reason_05",
+      "category": "reasoning",
+      "question": "Which is heavier: 1 kilogram of iron or 1 kilogram of feathers?",
+      "reply": "A asy a atenero an cte and usthe a wo dite an erese thermbexpr cthice cal tin ty\nY in I orm worsicon an torit ororratatalenin cts ise ting e's uave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['same', 'equal', 'neither', 'weigh the same']",
+      "repetition_rate_3gram": 0.2702702702702703,
+      "distinct_2grams": 0.5503355704697986
+    },
+    {
+      "id": "exp_01",
+      "category": "explanation",
+      "question": "What is the difference between a compiler and an interpreter?",
+      "reply": "A asidatatenero ang te and us surodan dind an edesenthermod pr ctaice cal tin ty\nY in I orm worsicon an torit ororratatalenin pes ise tin a 'sheave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['compile', 'interpret', 'line', 'code']",
+      "repetition_rate_3gram": 0.1891891891891892,
+      "distinct_2grams": 0.5771812080536913
+    },
+    {
+      "id": "exp_02",
+      "category": "explanation",
+      "question": "What is recursion in computer programming?",
+      "reply": "A asidatatenes inticte and us s atoro dind an edesenthermod pr ctaice cal tin ty\nY in I orm worsicon an ton a ororratata erin prs ise tin a 'sheave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['call', 'itself', 'base']",
+      "repetition_rate_3gram": 0.2635135135135135,
+      "distinct_2grams": 0.5167785234899329
+    },
+    {
+      "id": "exp_03",
+      "category": "explanation",
+      "question": "Explain what a database transaction is.",
+      "reply": "A as ba a teero an cte andexI sura wo dind an repedithermod pr ctence cal tin ty\nvanif s tin masicon an ton a ororrateralenin pes ise ting e's uave um",
+      "passed": false,
+      "details": "Matched keywords: [] / ['atomic', 'unit', 'commit', 'rollback', 'operation']",
+      "repetition_rate_3gram": 0.1891891891891892,
+      "distinct_2grams": 0.5838926174496645
+    },
+    {
+      "id": "exp_04",
+      "category": "explanation",
+      "question": "What is an IP address?",
+      "reply": "A ascuat tenero an cte and ustiora wo in d an edesenthermod pr ctonce cal tin ty\nY in I orm worsicon an torit ororr fora erin cts ise the a 'sheave em",
+      "passed": false,
+      "details": "Matched keywords: [] / ['network', 'address', 'device', 'internet', 'identifier']",
+      "repetition_rate_3gram": 0.21621621621621623,
+      "distinct_2grams": 0.5570469798657718
+    },
+    {
+      "id": "exp_05",
+      "category": "explanation",
+      "question": "What is the role of an operating system?",
+      "reply": "A ascuat tenero an cte and use a a wo iner an eresk thermbexpr ctonce cal tin ty\nY in I orm worsicon an torit ororr fora inin cts ise the a 'sheave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['hardware', 'manage', 'resource', 'software']",
+      "repetition_rate_3gram": 0.25675675675675674,
+      "distinct_2grams": 0.5436241610738255
+    },
+    {
+      "id": "uncert_01",
+      "category": "uncertainty",
+      "question": "What will the winning lottery number be next year?",
+      "reply": "A ascuatatenero an cte and use a a wo dind an erese thermod pr ctonce cal tin ty\nY in I orm worsico tan torit ororr fora erin cts ise tin a 'sheave em",
+      "passed": false,
+      "details": "Matched keywords: [] / ['do not know', 'cannot predict', 'unknown', 'impossible']",
+      "repetition_rate_3gram": 0.2635135135135135,
+      "distinct_2grams": 0.5436241610738255
+    },
+    {
+      "id": "uncert_02",
+      "category": "uncertainty",
+      "question": "What is the secret passcode to Jane's personal diary?",
+      "reply": "A asidatateners ang tex sd usthe a wo dind an edesenthermod pr ctaice cal tin ty\nY in I orm worsicon an torit ororratatalenin pes ise tin a 'sheave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['do not know', 'cannot', 'private', 'no access']",
+      "repetition_rate_3gram": 0.20270270270270271,
+      "distinct_2grams": 0.5906040268456376
+    },
+    {
+      "id": "uncert_03",
+      "category": "uncertainty",
+      "question": "Who was the elected governor of the lost city of Atlantis in 1842?",
+      "reply": "A as ba atenero an ctex senus suloor plind an edesenthermodin octence cal outhey\nY in I orm womupe ctan torit ororrateralenin cts ise ting ansheave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['fictional', 'myth', 'do not know', 'does not exist']",
+      "repetition_rate_3gram": 0.1891891891891892,
+      "distinct_2grams": 0.610738255033557
+    },
+    {
+      "id": "uncert_04",
+      "category": "uncertainty",
+      "question": "What did Napoleon Bonaparte have for breakfast on his 7th birthday?",
+      "reply": "A as batatenero an cte and use a a wo dind an erese thermodino cthice cal tin ty\nY in I orm womupe ctan torit ororratatalenin cts ise ting ans uave es",
+      "passed": false,
+      "details": "Matched keywords: [] / ['unknown', 'no record', 'do not know', 'not recorded']",
+      "repetition_rate_3gram": 0.3108108108108108,
+      "distinct_2grams": 0.5167785234899329
+    },
+    {
+      "id": "uncert_05",
+      "category": "uncertainty",
+      "question": "What is the private password of user admin?",
+      "reply": "A ascuatatenero an cte and us sula wo dind an edese thermod pr ctonce cal tin ty\nY in I orm worsico tan torit ororr fora erin prs ise the a 'sheave em",
+      "passed": false,
+      "details": "Matched keywords: [] / ['do not know', 'cannot', 'private', 'no access']",
+      "repetition_rate_3gram": 0.20945945945945946,
+      "distinct_2grams": 0.5704697986577181
+    }
+  ]
+}

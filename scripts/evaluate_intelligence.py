@@ -21,12 +21,12 @@ def main():
     parser = argparse.ArgumentParser(description="Evaluate Mini GPT intelligence and reasoning.")
     parser.add_argument(
         "--checkpoint",
-        default=str(ROOT / "checkpoints" / "v3" / "best.pt"),
+        default="checkpoints/v4/best.pt",
         help="Path to model checkpoint (.pt file)",
     )
     parser.add_argument(
         "--tokenizer",
-        default=str(ROOT / "checkpoints" / "tokenizer.json"),
+        default="checkpoints/v4/tokenizer.json",
         help="Path to tokenizer JSON file",
     )
     parser.add_argument(
@@ -55,15 +55,17 @@ def main():
     args = parser.parse_args()
 
     ckpt_path = Path(args.checkpoint)
+    if not ckpt_path.is_file() and (ROOT / args.checkpoint).is_file():
+        ckpt_path = ROOT / args.checkpoint
+
     tok_path = Path(args.tokenizer)
+    if not tok_path.is_file() and (ROOT / args.tokenizer).is_file():
+        tok_path = ROOT / args.tokenizer
+
     if not ckpt_path.is_file():
-        # Fall back to root checkpoints/best.pt if v3 not present
-        fallback = ROOT / "checkpoints" / "best.pt"
-        if fallback.is_file():
-            ckpt_path = fallback
-        else:
-            print(f"Error: checkpoint not found at {ckpt_path}")
-            sys.exit(1)
+        raise FileNotFoundError(f"Checkpoint file not found: {ckpt_path}")
+    if not tok_path.is_file():
+        raise FileNotFoundError(f"Tokenizer file not found: {tok_path}")
 
     print(f"Loading model from {ckpt_path}...")
     service = ModelService.from_checkpoint(ckpt_path, tok_path)
@@ -74,6 +76,7 @@ def main():
             max_new_tokens=150,
             temperature=args.temperature,
             top_k=args.top_k,
+            top_p=args.top_p,
             seed=42,
         )
 

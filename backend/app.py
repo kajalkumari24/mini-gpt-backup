@@ -5,6 +5,7 @@ Run from the project folder:
 Then open http://127.0.0.1:8000  (the chat page is served by this same app).
 """
 import collections
+import inspect
 import json
 import os
 import threading
@@ -90,6 +91,18 @@ class ChatRequest(Settings):
 
 class ModelSelectRequest(BaseModel):
     model: str
+
+
+def _invoke_service(method, *args, **kwargs):
+    """Invoke a service method, passing only kwargs that the method accepts."""
+    try:
+        sig = inspect.signature(method)
+        has_varkw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
+        if not has_varkw:
+            kwargs = {k: v for k, v in kwargs.items() if k in sig.parameters}
+    except (ValueError, TypeError):
+        pass
+    return method(*args, **kwargs)
 
 
 def create_app(
@@ -312,7 +325,8 @@ def create_app(
         acquire_generation_slot()
         svc = get_service()
         try:
-            return svc.complete(
+            return _invoke_service(
+                svc.complete,
                 request_body.prompt,
                 request_body.max_new_tokens,
                 request_body.temperature,
@@ -330,7 +344,8 @@ def create_app(
         svc = get_service()
         try:
             messages = [m.model_dump() for m in request_body.messages]
-            return svc.chat(
+            return _invoke_service(
+                svc.chat,
                 messages,
                 request_body.max_new_tokens,
                 request_body.temperature,
@@ -353,7 +368,8 @@ def create_app(
         def event_stream():
             try:
                 if hasattr(svc, "stream_chat"):
-                    for chunk in svc.stream_chat(
+                    for chunk in _invoke_service(
+                        svc.stream_chat,
                         messages,
                         request_body.max_new_tokens,
                         request_body.temperature,
