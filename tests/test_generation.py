@@ -99,6 +99,34 @@ def test_model_mode_is_restored():
     assert model.training
 
 
+def test_model_mode_is_restored_on_exception():
+    class BrokenModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.config = SimpleNamespace(context_length=8)
+
+        def forward(self, *args, **kwargs):
+            raise RuntimeError("Simulation failure")
+
+    m = BrokenModel().train()
+    with pytest.raises(RuntimeError):
+        generate(m, torch.tensor([[1]]), 3)
+    assert m.training
+
+
+def test_generate_text_rejects_empty_prompt():
+    tokenizer = CharTokenizer.from_text("abcdefgh")
+    with pytest.raises(ValueError, match="cannot be empty"):
+        generate_text(make_model(), tokenizer, "")
+
+
+def test_batch_repetition_penalty():
+    model = make_model()
+    prompt = torch.tensor([[1, 2], [3, 4]])
+    out = generate(model, prompt, 3, repetition_penalty=1.5)
+    assert out.shape == (2, 5)
+
+
 def test_bad_arguments_rejected():
     model, start = make_model(), torch.tensor([[1, 2]])
     with pytest.raises(ValueError):

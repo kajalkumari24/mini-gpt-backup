@@ -32,20 +32,20 @@ def main():
     parser.add_argument(
         "--temperature",
         type=float,
-        default=0.7,
-        help="Sampling temperature (default: 0.7)",
+        default=0.0,
+        help="Sampling temperature (default: 0.0 for deterministic evaluation)",
     )
     parser.add_argument(
         "--top-k",
         type=int,
-        default=40,
-        help="Top-k sampling threshold (default: 40)",
+        default=1,
+        help="Top-k sampling threshold (default: 1 for greedy evaluation)",
     )
     parser.add_argument(
         "--top-p",
         type=float,
-        default=0.9,
-        help="Top-p nucleus sampling threshold (default: 0.9)",
+        default=1.0,
+        help="Top-p nucleus sampling threshold (default: 1.0)",
     )
     parser.add_argument(
         "--output",

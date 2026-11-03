@@ -39,6 +39,29 @@ def test_evaluate_code_execution_syntax_error():
     assert evaluate_code_execution(code, test_code) is False
 
 
+def test_evaluate_code_execution_infinite_loop_timeout():
+    code = "def loop(x):\n    while True: pass"
+    test_code = "loop(1)"
+    # Should safely terminate with False via timeout rather than hanging
+    assert evaluate_code_execution(code, test_code, timeout=0.5) is False
+
+
+def test_evaluate_question_explanation_multi_keywords():
+    dummy_fn = lambda msgs: {"reply": "A compiler translates whole programs."}
+    item = {
+        "id": "e1",
+        "question": "What is difference?",
+        "expected_keywords": ["compiler", "interpreter", "bytecode"],
+    }
+    # Matches only 1 keyword ("compiler"), but explanation requires >= 2
+    res_partial = evaluate_question(dummy_fn, "explanation", item)
+    assert res_partial["passed"] is False
+
+    dummy_both = lambda msgs: {"reply": "A compiler translates ahead of time, while an interpreter runs line by line."}
+    res_full = evaluate_question(dummy_both, "explanation", item)
+    assert res_full["passed"] is True
+
+
 def test_evaluate_question_factual():
     dummy_fn = lambda msgs: {"reply": "The capital of France is Paris."}
     item = {"id": "1", "question": "What is capital of France?", "expected_keywords": ["paris"]}

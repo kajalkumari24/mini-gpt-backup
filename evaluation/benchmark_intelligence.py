@@ -28,17 +28,24 @@ def extract_python_code(text: str) -> str:
     return text.strip()
 
 
-def evaluate_code_execution(code_str: str, test_code: str) -> bool:
-    """Safely execute extracted Python code against unit test assertions in a restricted namespace."""
-    global_env = {}
-    local_env = {}
+def evaluate_code_execution(code_str: str, test_code: str, timeout: float = 3.0) -> bool:
+    """Safely execute extracted Python code against unit test assertions in an isolated subprocess."""
+    import subprocess
+    import sys
+
+    if not code_str or not code_str.strip():
+        return False
+
+    script = f"{code_str}\n\n{test_code}\n"
     try:
-        # Execute the function definition
-        exec(code_str, global_env, local_env)
-        # Execute the test assertions
-        exec(test_code, global_env, local_env)
-        return True
-    except Exception:
+        proc = subprocess.run(
+            [sys.executable, "-I", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        return proc.returncode == 0
+    except (subprocess.TimeoutExpired, Exception):
         return False
 
 
@@ -62,8 +69,11 @@ def evaluate_question(
     if category in ("factual", "reasoning", "explanation", "uncertainty"):
         keywords = [kw.lower() for kw in item.get("expected_keywords", [])]
         matched = [kw for kw in keywords if kw in lower_reply]
-        passed = len(matched) > 0
-        details = f"Matched keywords: {matched} / {keywords}"
+        # For multi-concept explanations require at least 2 distinct keywords; for single-answer categories require >= 1
+        min_required = item.get("min_keywords", 2 if category == "explanation" else 1)
+        required_count = min(min_required, len(keywords)) if keywords else 0
+        passed = len(matched) >= required_count and required_count > 0
+        details = f"Matched keywords: {matched} / {keywords} (required: {required_count})"
 
     elif category == "coding":
         extracted = extract_python_code(reply)
@@ -101,6 +111,16 @@ def run_intelligence_benchmark(
     category_summary = {}
 
     for cat_name, items in categories.items():
+        if not items:
+            category_summary[cat_name] = {
+                "total": 0,
+                "passed": 0,
+                "pass_rate": 0.0,
+                "avg_3gram_repetition": 0.0,
+                "status": "no_questions_tested",
+            }
+            continue
+
         cat_passed = 0
         cat_rep = 0.0
         for item in items:
@@ -110,9 +130,9 @@ def run_intelligence_benchmark(
                 cat_passed += 1
             cat_rep += res["repetition_rate_3gram"]
 
-        count = max(1, len(items))
+        count = len(items)
         category_summary[cat_name] = {
-            "total": len(items),
+            "total": count,
             "passed": cat_passed,
             "pass_rate": cat_passed / count,
             "avg_3gram_repetition": cat_rep / count,
@@ -120,7 +140,7 @@ def run_intelligence_benchmark(
 
     total_items = len(results)
     total_passed = sum(1 for r in results if r["passed"])
-    overall_pass_rate = total_passed / max(1, total_items)
+    overall_pass_rate = (total_passed / total_items) if total_items > 0 else 0.0
 
     return {
         "total_questions": total_items,

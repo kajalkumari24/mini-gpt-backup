@@ -68,71 +68,74 @@ def generate(
     new_text = ""
     actual_eos = _get_eos_id(tokenizer, eos_token_id)
 
-    for _ in range(max_new_tokens):
-        context = token_ids[:, -context_length:]    # the model only sees its last window
-        logits, _ = model(context)
-        logits = logits[:, -1, :].clone()           # scores for the NEXT token only
+    try:
+        for _ in range(max_new_tokens):
+            context = token_ids[:, -context_length:]    # the model only sees its last window
+            logits, _ = model(context)
+            logits = logits[:, -1, :].clone()           # scores for the NEXT token only
 
-        if repetition_penalty != 1.0:
-            recent_tokens = set(token_ids[0, -context_length:].tolist())
-            for tid in recent_tokens:
-                if logits[0, tid] > 0:
-                    logits[0, tid] /= repetition_penalty
-                else:
-                    logits[0, tid] *= repetition_penalty
+            if repetition_penalty != 1.0:
+                for b in range(token_ids.size(0)):
+                    recent_tokens = set(token_ids[b, -context_length:].tolist())
+                    for tid in recent_tokens:
+                        if logits[b, tid] > 0:
+                            logits[b, tid] /= repetition_penalty
+                        else:
+                            logits[b, tid] *= repetition_penalty
 
-        if temperature == 0:
-            next_id = torch.argmax(logits, dim=-1, keepdim=True)
-        else:
-            logits = logits / temperature
-            if top_k is not None:
-                k = min(top_k, logits.size(-1))
-                kth_best = torch.topk(logits, k).values[:, -1, None]
-                logits = logits.masked_fill(logits < kth_best, float("-inf"))
+            if temperature == 0:
+                next_id = torch.argmax(logits, dim=-1, keepdim=True)
+            else:
+                logits = logits / temperature
+                if top_k is not None:
+                    k = min(top_k, logits.size(-1))
+                    kth_best = torch.topk(logits, k).values[:, -1, None]
+                    logits = logits.masked_fill(logits < kth_best, float("-inf"))
 
-            if top_p is not None and top_p < 1.0:
-                sorted_logits, sorted_indices = torch.sort(logits, descending=True, dim=-1)
-                sorted_probs = F.softmax(sorted_logits, dim=-1)
-                cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
+                if top_p is not None and top_p < 1.0:
+                    sorted_logits, sorted_indices = torch.sort(logits, descending=True, dim=-1)
+                    sorted_probs = F.softmax(sorted_logits, dim=-1)
+                    cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
 
-                # Remove tokens with cumulative probability above top_p threshold
-                sorted_indices_to_remove = cumulative_probs > top_p
-                # Shift right by 1 to always preserve at least the top candidate token
-                sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
-                sorted_indices_to_remove[..., 0] = False
+                    # Remove tokens with cumulative probability above top_p threshold
+                    sorted_indices_to_remove = cumulative_probs > top_p
+                    # Shift right by 1 to always preserve at least the top candidate token
+                    sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
+                    sorted_indices_to_remove[..., 0] = False
 
-                indices_to_remove = sorted_indices_to_remove.scatter(
-                    dim=-1, index=sorted_indices, src=sorted_indices_to_remove
-                )
-                logits = logits.masked_fill(indices_to_remove, float("-inf"))
+                    indices_to_remove = sorted_indices_to_remove.scatter(
+                        dim=-1, index=sorted_indices, src=sorted_indices_to_remove
+                    )
+                    logits = logits.masked_fill(indices_to_remove, float("-inf"))
 
-            probs = F.softmax(logits, dim=-1)
-            next_id = torch.multinomial(probs, num_samples=1)
+                probs = F.softmax(logits, dim=-1)
+                next_id = torch.multinomial(probs, num_samples=1)
 
-        token_ids = torch.cat([token_ids, next_id], dim=1)
+            token_ids = torch.cat([token_ids, next_id], dim=1)
 
-        # Immediate EOS stop check
-        if actual_eos is not None and int(next_id[0, 0]) == actual_eos:
-            break
-
-        if stop_strings and tokenizer:
-            char = _decode_token(tokenizer, int(next_id[0, 0]))
-            new_text += char
-            stopped = False
-            for s in stop_strings:
-                if isinstance(s, str):
-                    if s in new_text:
-                        stopped = True
-                        break
-                elif hasattr(s, "search"):
-                    if s.search(new_text):
-                        stopped = True
-                        break
-            if stopped:
+            # Immediate EOS stop check
+            if actual_eos is not None and int(next_id[0, 0]) == actual_eos:
                 break
 
-    model.train(was_training)
-    return token_ids
+            if stop_strings and tokenizer:
+                char = _decode_token(tokenizer, int(next_id[0, 0]))
+                new_text += char
+                stopped = False
+                for s in stop_strings:
+                    if isinstance(s, str):
+                        if s in new_text:
+                            stopped = True
+                            break
+                    elif hasattr(s, "search"):
+                        if s.search(new_text):
+                            stopped = True
+                            break
+                if stopped:
+                    break
+
+        return token_ids
+    finally:
+        model.train(was_training)
 
 
 @torch.no_grad()
@@ -151,8 +154,16 @@ def generate_stream(
     """Yields each generated token text in real-time as it is predicted."""
     if token_ids.dim() != 2 or token_ids.size(1) < 1:
         raise ValueError("token_ids must have shape (batch, prompt_len) with prompt_len >= 1")
+    if max_new_tokens < 0:
+        raise ValueError("max_new_tokens must be 0 or more")
+    if temperature < 0:
+        raise ValueError("temperature must be 0 or more (0 means greedy)")
+    if top_k is not None and top_k < 1:
+        raise ValueError("top_k must be at least 1 (or None to turn it off)")
     if top_p is not None and (top_p <= 0.0 or top_p > 1.0):
         raise ValueError("top_p must be between 0.0 (exclusive) and 1.0 (inclusive), or None")
+    if repetition_penalty < 1.0:
+        raise ValueError("repetition_penalty must be at least 1.0")
 
     was_training = model.training
     model.eval()
@@ -160,72 +171,74 @@ def generate_stream(
     buffer = ""
     actual_eos = _get_eos_id(tokenizer, eos_token_id)
 
-    for _ in range(max_new_tokens):
-        context = token_ids[:, -context_length:]
-        logits, _ = model(context)
-        logits = logits[:, -1, :].clone()
+    try:
+        for _ in range(max_new_tokens):
+            context = token_ids[:, -context_length:]
+            logits, _ = model(context)
+            logits = logits[:, -1, :].clone()
 
-        if repetition_penalty != 1.0:
-            recent_tokens = set(token_ids[0, -context_length:].tolist())
-            for tid in recent_tokens:
-                if logits[0, tid] > 0:
-                    logits[0, tid] /= repetition_penalty
-                else:
-                    logits[0, tid] *= repetition_penalty
+            if repetition_penalty != 1.0:
+                for b in range(token_ids.size(0)):
+                    recent_tokens = set(token_ids[b, -context_length:].tolist())
+                    for tid in recent_tokens:
+                        if logits[b, tid] > 0:
+                            logits[b, tid] /= repetition_penalty
+                        else:
+                            logits[b, tid] *= repetition_penalty
 
-        if temperature == 0:
-            next_id = torch.argmax(logits, dim=-1, keepdim=True)
-        else:
-            logits = logits / temperature
-            if top_k is not None:
-                k = min(top_k, logits.size(-1))
-                kth_best = torch.topk(logits, k).values[:, -1, None]
-                logits = logits.masked_fill(logits < kth_best, float("-inf"))
+            if temperature == 0:
+                next_id = torch.argmax(logits, dim=-1, keepdim=True)
+            else:
+                logits = logits / temperature
+                if top_k is not None:
+                    k = min(top_k, logits.size(-1))
+                    kth_best = torch.topk(logits, k).values[:, -1, None]
+                    logits = logits.masked_fill(logits < kth_best, float("-inf"))
 
-            if top_p is not None and top_p < 1.0:
-                sorted_logits, sorted_indices = torch.sort(logits, descending=True, dim=-1)
-                sorted_probs = F.softmax(sorted_logits, dim=-1)
-                cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
+                if top_p is not None and top_p < 1.0:
+                    sorted_logits, sorted_indices = torch.sort(logits, descending=True, dim=-1)
+                    sorted_probs = F.softmax(sorted_logits, dim=-1)
+                    cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
 
-                sorted_indices_to_remove = cumulative_probs > top_p
-                sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
-                sorted_indices_to_remove[..., 0] = False
+                    sorted_indices_to_remove = cumulative_probs > top_p
+                    sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
+                    sorted_indices_to_remove[..., 0] = False
 
-                indices_to_remove = sorted_indices_to_remove.scatter(
-                    dim=-1, index=sorted_indices, src=sorted_indices_to_remove
-                )
-                logits = logits.masked_fill(indices_to_remove, float("-inf"))
+                    indices_to_remove = sorted_indices_to_remove.scatter(
+                        dim=-1, index=sorted_indices, src=sorted_indices_to_remove
+                    )
+                    logits = logits.masked_fill(indices_to_remove, float("-inf"))
 
-            probs = F.softmax(logits, dim=-1)
-            next_id = torch.multinomial(probs, num_samples=1)
+                probs = F.softmax(logits, dim=-1)
+                next_id = torch.multinomial(probs, num_samples=1)
 
-        token_ids = torch.cat([token_ids, next_id], dim=1)
+            token_ids = torch.cat([token_ids, next_id], dim=1)
 
-        # Immediate EOS stop check
-        if actual_eos is not None and int(next_id[0, 0]) == actual_eos:
-            break
+            # Immediate EOS stop check
+            if actual_eos is not None and int(next_id[0, 0]) == actual_eos:
+                break
 
-        char = _decode_token(tokenizer, int(next_id[0, 0])) if tokenizer else ""
-        buffer += char
+            char = _decode_token(tokenizer, int(next_id[0, 0])) if tokenizer else ""
+            buffer += char
 
-        stopped = False
-        if stop_strings:
-            for s in stop_strings:
-                if isinstance(s, str):
-                    if s in buffer:
-                        stopped = True
-                        break
-                elif hasattr(s, "search"):
-                    if s.search(buffer):
-                        stopped = True
-                        break
+            stopped = False
+            if stop_strings:
+                for s in stop_strings:
+                    if isinstance(s, str):
+                        if s in buffer:
+                            stopped = True
+                            break
+                    elif hasattr(s, "search"):
+                        if s.search(buffer):
+                            stopped = True
+                            break
 
-        if stopped:
-            break
+            if stopped:
+                break
 
-        yield char
-
-    model.train(was_training)
+            yield char
+    finally:
+        model.train(was_training)
 
 
 def generate_text(
@@ -241,6 +254,8 @@ def generate_text(
     eos_token_id=None,
 ):
     """Prompt text in, prompt + continuation out."""
+    if prompt is None or len(prompt) == 0:
+        raise ValueError("Prompt cannot be empty.")
     device = next(model.parameters()).device
     ids = tokenizer.encode(prompt, errors="ignore")
     if not ids:
